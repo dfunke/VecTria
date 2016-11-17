@@ -1,13 +1,75 @@
 #pragma once
-
 /*
  * struct EdgeExtractor {
  *
- * void getEdge(const SIMPLICES & simplices,
- *              const BOUNDS & bounds,
+ * Starting from the convex hull of the DT,
+ * test a simplex whether its circumsphere is within the specified polytope of the other partitions.
+ * If so, enqueue all its neighbors for processing.
+ *
+ * template<typename DT, typename POINTS, typename POLYTOPE, typename POINT_IDS, typename SIMPLEX_IDS>
+ * void getEdge(const DT & dt,
+ *              const POINTS & points,
+ *              const POLYTOPE & polytope,
  *              POINT_IDS & edgePoints,
  *              SIMPLEX_IDS & edgeSimplices);
  *
  * }
  */
 
+// common includes
+#include <assert.h>
+#include "common_types.h"
+
+// TBBEdgeExtractor includes
+#include <tbb/parallel_do.h>
+
+struct TBBEdgeExtractor {
+
+  template<typename DT, typename POINTS, typename POLYTOPE, typename POINT_IDS, typename SIMPLEX_IDS>
+  void getEdge(const DT & dt,
+               const POINTS & points,
+               const POLYTOPE & polytope,
+               POINT_IDS & edgePoints,
+               SIMPLEX_IDS & edgeSimplices){
+
+    // add infinite points to edge
+    for(auto k = typename DT::tSimplex::tPoint::cINF; k != 0; ++k)
+      edgePoints.insert(k);
+
+    auto queuedMark = ++simplices.mark;
+    auto doneMark = ++simplices.mark;
+    assert(queuedMark < doneMark);
+
+    tbb::parallel_do(simplices.convexHull, [&](const tIdType id,
+                                               tbb::parallel_do_feeder<tIdType> & feeder) {
+
+        if (! typename DT::tSimplex::isFinite(id))
+            return;
+
+        const auto & simplex = dt[id];
+
+        if (simplex.mark == doneMark) {
+            return; //already checked
+        }
+        simplex.mark = doneMark;
+
+        const auto cs = simplex.circumsphere(points);
+        if (polytope.intersects(cs)) {
+
+            edgeSimplices.insert(simplex.id);
+
+            for (const auto & v : simplex.vertices) {
+                edgePoints.insert(v);
+            }
+
+            for (const auto &n : simplex.neighbors) {
+                if (typename DT::tSimplex::isFinite(n) && simplices[n].mark < queuedMark) {
+                    // n was not yet inspected
+                    simplices[n].mark = queuedMark;
+                    feeder.add(n);
+                }
+            }
+        }
+    });
+  }
+}
