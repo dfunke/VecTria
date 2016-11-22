@@ -16,11 +16,11 @@
 struct TBBEdgeExtractor {
 
     template<typename DT, typename POINTS, typename POLYTOPE>
-    void operator()(const DT &dt,
-                    const POINTS &points,
-                    const POLYTOPE &polytope,
-                    tConcurrentGrowingIdSet &edgePoints,
-                    tConcurrentGrowingIdSet &edgeSimplices) {
+    void getEdge(const DT &dt,
+                 const POINTS &points,
+                 const POLYTOPE &polytope,
+                 tConcurrentGrowingIdSet &edgePoints,
+                 tConcurrentGrowingIdSet &edgeSimplices) {
 
         // add infinite points to edge
         auto edgePointsHandle = edgePoints.handle();
@@ -32,8 +32,8 @@ struct TBBEdgeExtractor {
         tbbETS <tConcurrentGrowingIdSetHandle> tsEdgeSimplicesHandle(std::ref(edgeSimplices));
         tbbETS<typename DT::tConstHandle> tsDTHandle(std::ref(dt));
 
-        auto queuedMark = ++dt.mark;
-        auto doneMark = ++dt.mark;
+        auto queuedMark = ++simplices.mark;
+        auto doneMark = ++simplices.mark;
         assert(queuedMark < doneMark);
 
         tbb::parallel_do(dt.convexHull, [&](const tIdType id,
