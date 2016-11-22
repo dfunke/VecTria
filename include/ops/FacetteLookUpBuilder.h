@@ -11,8 +11,8 @@
 #include <tbb/parallel_for.h>
 #include "tbb_types.h"
 
-template<bool INCLUDE_SELF = false,
-        bool INCLUDE_NEIGHBOR = true>
+template<bool INCLUDE_SELF = false, // include the simplices of idSet to lookup table
+        bool INCLUDE_NEIGHBOR = true> // include the neighbors of simplices in idSet to lookup table
 struct TBBFacetteLookUpBuilder {
 
     template<typename DT>
