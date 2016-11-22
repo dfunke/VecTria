@@ -1,76 +1,74 @@
 #pragma once
 /*
- * Starting from the convex hull of the DT,
- * test a simplex whether its circumsphere is within the specified polytope of the other partitions.
- * If so, enqueue all its neighbors for processing.
+ * Build lookup table of facette hashs for given simplices + their neighboring simplices
  */
 
 // common includes
 #include <assert.h>
 #include "common_types.h"
 
-// TBBEdgeExtractor includes
-#include <tbb/parallel_do.h>
+// TBBFacetteLookUpBuilder includes
+#include <tbb/parallel_for.h>
 #include "tbb_types.h"
 
-struct TBBEdgeExtractor {
+template<bool INCLUDE_SELF = false,
+        bool INCLUDE_NEIGHBOR = true>
+struct TBBFacetteLookUpBuilder {
 
-    template<typename DT, typename POINTS, typename POLYTOPE>
-    void getEdge(const DT &dt,
-                 const POINTS &points,
-                 const POLYTOPE &polytope,
-                 tConcurrentGrowingIdSet &edgePoints,
-                 tConcurrentGrowingIdSet &edgeSimplices) {
+    template<typename DT>
+    tConcurrentGrowingFacetteLookUp operator()(const DT &dt,
+                                               tIdSet &simplices) {
 
-        // add infinite points to edge
-        auto edgePointsHandle = edgePoints.handle();
-        for (auto k = typename DT::tSimplex::tPoint::cINF; k != 0; ++k)
-            edgePointsHandle.insert(k);
+        const auto D = DT::tSimplex::tPoint::D;
+
+        // initialize lookup table
+        tConcurrentGrowingFacetteLookUp facetteLookUp((INCLUDE_SELF + INCLUDE_NEIGHBOR) * (D + 1) * simplices.size());
 
         // setup thread local storage
-        tbbETS <tConcurrentGrowingIdSetHandle> tsEdgePointsHandle(std::ref(edgePoints));
-        tbbETS <tConcurrentGrowingIdSetHandle> tsEdgeSimplicesHandle(std::ref(edgeSimplices));
+        tbbETS <tConcurrentGrowingFacetteLookUpHandle> tsFacetteLookUpHandle(std::ref(facetteLookUp));
         tbbETS<typename DT::tConstHandle> tsDTHandle(std::ref(dt));
 
-        auto queuedMark = ++simplices.mark;
-        auto doneMark = ++simplices.mark;
-        assert(queuedMark < doneMark);
+        // only one mark needed
+        auto doneMark = ++dt.mark;
 
-        tbb::parallel_do(dt.convexHull, [&](const tIdType id,
-                                            tbb::parallel_do_feeder <tIdType> &feeder) {
+        tbb::parallel_for(simplices.range(), [&](const auto &range) {
 
-            if (!typename DT::tSimplex::isFinite(id))
-                return;
-
-            // acquire thread local handles
-            auto &edgePointsHandle = tsEdgePointsHandle.local();
-            auto &edgeSimplicesHandle = tsEdgeSimplicesHandle.local();
+            auto &facetteLookUpHandle = tsFacetteLookUpHandle.local();
             auto &dtHandle = tsDTHandle.local();
 
-            const auto &simplex = dtHandle[id];
+            for (const auto &simplexID : range) {
+                const auto &simplex = dtHandle[simplexID];
 
-            if (simplex.mark == doneMark) {
-                return; //already checked
-            }
-            simplex.mark = doneMark;
+                if (simplex.mark == doneMark) {
+                    continue; //already checked
+                }
+                simplex.mark = doneMark;
 
-            const auto cs = simplex.circumsphere(points);
-            if (polytope.intersects(cs)) {
-
-                edgeSimplicesHandle.insert(simplex.id);
-
-                for (const auto &v : simplex.vertices) {
-                    edgePointsHandle.insert(v);
+                if (INCLUDE_SELF) {
+                    for (uint i = 0; i < D + 1; ++i) {
+                        auto facetteHash = simplex.faceFingerprint(i);
+                        facetteLookUpHandle.insert(facetteHash, simplexID);
+                    }
                 }
 
-                for (const auto &n : simplex.neighbors) {
-                    if (typename DT::tSimplex::isFinite(n) && dtHandle[n].mark < queuedMark) {
-                        // n was not yet inspected
-                        dtHandle[n].mark = queuedMark;
-                        feeder.add(n);
+                if (INCLUDE_NEIGHBOR) {
+                    for (const auto &n : simplex.neighbors) {
+                        if (typename DT::tSimplex::isFinite(n) && !simplices.count(n)) {
+                            // we have an "inward" neighbor, add it to the lookup table
+                            if (dtHandle[n].mark < doneMark) {
+                                dtHandle[n].mark = doneMark;
+
+                                for (uint i = 0; i < D + 1; ++i) {
+                                    auto facetteHash = dtHandle[n].faceFingerprint(i);
+                                    facetteLookUpHandle.insert(facetteHash, n);
+                                }
+                            }
+                        }
                     }
                 }
             }
         });
+
+        return facetteLookUp;
     }
 };

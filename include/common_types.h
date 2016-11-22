@@ -8,3 +8,6 @@ using tIdSet = LP_Set<tIdType, true>;
 using tConcurrentFixedIdSet<tIdType, false>;
 using tConcurrentGrowingIdSet = GrowingHashTable <Concurrent_LP_Set<tIdType, true>>;
 using tConcurrentGrowingIdSetHandle = GrowingHashTableHandle <Concurrent_LP_Set<tIdType, true>>;
+
+using tConcurrentGrowingFacetteLookUp = GrowingHashTable<Concurrent_LP_MultiMap<tHashType, tIdType>>;
+using tConcurrentGrowingFacetteLookUpHandle= GrowingHashTableHandle<Concurrent_LP_MultiMap<tHashType, tIdType>>;
