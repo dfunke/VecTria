@@ -26,7 +26,7 @@ struct TBBTriangulationStitcher {
 
         // combine the partial triangulations into one and delete all edge simplices
         auto mergedDT = std::move(partialDTs[0]);
-        for (uint i = 1; i < partialDTs.size(); ++i) {
+        for (PartialDTs::size_type i = 1; i < partialDTs.size(); ++i) {
             mergedDT.merge(std::move(partialDTs[i]));
         }
         mergedDT.filter(edgeSimplices);
@@ -69,7 +69,7 @@ struct TBBTriangulationStitcher {
                 auto &edgeSimplex = *it;
 
                 // check whether edgeSimplex is completely contained in one partition
-                uint p0 = partitioning.partition(edgeSimplex.vertices[0]);
+                auto p0 = partitioning.partition(edgeSimplex.vertices[0]);
                 bool insert = !partitioning[p0].contains(edgeSimplex);
 
                 if (!insert) {
@@ -94,7 +94,7 @@ struct TBBTriangulationStitcher {
                     if (!edgeSimplex.isFinite())
                         cConvexHull.push_back(edgeSimplex.id);
 
-                    for (uint d = 0; d < D + 1; ++d) {
+                    for (tDimType d = 0; d < D + 1; ++d) {
                         facetteLookUpHandle.insert((edgeSimplex.faceFingerprint(d)), edgeSimplex.id);
                     }
                 } else {
