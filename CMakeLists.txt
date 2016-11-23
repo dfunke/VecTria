@@ -22,5 +22,8 @@ endif ()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -std=c++17 -pedantic -Wall -Wextra -Werror")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native -std=c11 -pedantic -Wall -Wextra -Werror")
 
+# add project include directories
+include_directories("${PROJECT_SOURCE_DIR}/include")
+
 # add all sources
 add_subdirectory(src)
