@@ -39,7 +39,7 @@ struct TBBNeighborUpdater {
             }
             simplex.mark = doneMark;
 
-            for (uint d = 0; d < D + 1; ++d) {
+            for (tDimType d = 0; d < D + 1; ++d) {
 
                 /* We need to update the neighbor if
                  *  a) it is finite, but doesn't exist in the triangulation anymore or is not a neighbor anymore

@@ -3,6 +3,7 @@
 using tIdType = uint64_t;
 using tHashType = uint32_t;
 using tMarkType = uint8_t;
+using tDimType = uint8_t;
 
 using tIdSet = LP_Set<tIdType, true>;
 using tConcurrentFixedIdSet<tIdType, false>;

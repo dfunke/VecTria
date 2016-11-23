@@ -45,7 +45,7 @@ struct TBBFacetteLookUpBuilder {
                 simplex.mark = doneMark;
 
                 if (INCLUDE_SELF) {
-                    for (uint i = 0; i < D + 1; ++i) {
+                    for (tDimType i = 0; i < D + 1; ++i) {
                         auto facetteHash = simplex.faceFingerprint(i);
                         facetteLookUpHandle.insert(facetteHash, simplexID);
                     }
@@ -58,7 +58,7 @@ struct TBBFacetteLookUpBuilder {
                             if (dtHandle[n].mark < doneMark) { //TODO possible race condition
                                 dtHandle[n].mark = doneMark;
 
-                                for (uint i = 0; i < D + 1; ++i) {
+                                for (tDimType i = 0; i < D + 1; ++i) {
                                     auto facetteHash = dtHandle[n].faceFingerprint(i);
                                     facetteLookUpHandle.insert(facetteHash, n);
                                 }
