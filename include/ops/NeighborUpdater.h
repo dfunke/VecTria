@@ -26,7 +26,7 @@ struct TBBNeighborUpdater {
         // only one mark needed
         auto queuedMark = ++dt.mark;
         auto doneMark = ++dt.mark;
-        ASSERT(queuedMark < doneMark);
+        assert(queuedMark < doneMark);
 
         tbb::parallel_do(simplices.range(), [&](const tIdType &id,
                                                 tbb::parallel_do_feeder <tIdType> &feeder) {
