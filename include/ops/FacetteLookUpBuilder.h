@@ -7,12 +7,21 @@
 #include <assert.h>
 #include "common_types.h"
 
+// define policy class
+struct FacetteLookUpPolicy {
+    static constexpr bool pIncludeSelf = true;
+    static constexpr bool pNoIncludeSelf = false;
+
+    static constexpr bool pIncludeNeighbor = true;
+    static constexpr bool pNoIncludeNeighbor = false;
+};
+
 // TBBFacetteLookUpBuilder includes
 #include <tbb/parallel_for.h>
 #include "tbb_types.h"
 
-template<bool INCLUDE_SELF = false, // include the simplices of idSet to lookup table
-        bool INCLUDE_NEIGHBOR = true> // include the neighbors of simplices in idSet to lookup table
+template<bool INCLUDE_SELF, // include the simplices of idSet to lookup table
+        bool INCLUDE_NEIGHBOR> // include the neighbors of simplices in idSet to lookup table
 struct TBBFacetteLookUpBuilder {
 
     template<typename DT>
@@ -25,7 +34,7 @@ struct TBBFacetteLookUpBuilder {
         tConcurrentGrowingFacetteLookUp facetteLookUp((INCLUDE_SELF + INCLUDE_NEIGHBOR) * (D + 1) * simplices.size());
 
         // setup thread local storage
-        tbbETS <tConcurrentGrowingFacetteLookUpHandle> tsFacetteLookUpHandle(std::ref(facetteLookUp));
+        tbbETS<tConcurrentGrowingFacetteLookUpHandle> tsFacetteLookUpHandle(std::ref(facetteLookUp));
         tbbETS<typename DT::tConstHandle> tsDTHandle(std::ref(dt));
 
         // only one mark needed
