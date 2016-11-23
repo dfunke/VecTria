@@ -36,7 +36,7 @@ struct TBBEdgeExtractor {
         auto doneMark = ++dt.mark;
         assert(queuedMark < doneMark);
 
-        tbb::parallel_do(dt.convexHull, [&](const tIdType id,
+        tbb::parallel_do(dt.convexHull, [&](const tIdType &id,
                                             tbb::parallel_do_feeder <tIdType> &feeder) {
 
             if (!typename DT::tSimplex::isFinite(id))
@@ -64,7 +64,8 @@ struct TBBEdgeExtractor {
                 }
 
                 for (const auto &n : simplex.neighbors) {
-                    if (typename DT::tSimplex::isFinite(n) && dtHandle[n].mark < queuedMark) {
+                    if (typename DT::tSimplex::isFinite(n) &&
+                        dtHandle[n].mark < queuedMark) { //TODO possible race condition
                         // n was not yet inspected
                         dtHandle[n].mark = queuedMark;
                         feeder.add(n);

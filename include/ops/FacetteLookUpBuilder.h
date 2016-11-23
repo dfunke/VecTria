@@ -17,7 +17,7 @@ struct TBBFacetteLookUpBuilder {
 
     template<typename DT>
     tConcurrentGrowingFacetteLookUp operator()(const DT &dt,
-                                               tIdSet &simplices) {
+                                               const tIdSet &simplices) {
 
         const auto D = DT::tSimplex::tPoint::D;
 
@@ -55,7 +55,7 @@ struct TBBFacetteLookUpBuilder {
                     for (const auto &n : simplex.neighbors) {
                         if (typename DT::tSimplex::isFinite(n) && !simplices.count(n)) {
                             // we have an "inward" neighbor, add it to the lookup table
-                            if (dtHandle[n].mark < doneMark) {
+                            if (dtHandle[n].mark < doneMark) { //TODO possible race condition
                                 dtHandle[n].mark = doneMark;
 
                                 for (uint i = 0; i < D + 1; ++i) {
