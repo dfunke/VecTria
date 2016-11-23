@@ -7,11 +7,11 @@
 #include <assert.h>
 #include "common_types.h"
 
-// TBBNeighborUpdater includes
+// TBBNeighborhoodUpdater includes
 #include <tbb/parallel_do.h>
 #include "tbb_types.h"
 
-struct TBBNeighborUpdater {
+struct TBBNeighborhoodUpdater {
 
     template<typename DT>
     void operator()(DT &dt,
@@ -29,7 +29,7 @@ struct TBBNeighborUpdater {
         assert(queuedMark < doneMark);
 
         tbb::parallel_do(simplices.range(), [&](const tIdType &id,
-                                                tbb::parallel_do_feeder <tIdType> &feeder) {
+                                                tbb::parallel_do_feeder<tIdType> &feeder) {
 
             auto &dtHandle = tsDTHandle.local();
             auto &simplex = dtHandle[id];
@@ -54,7 +54,7 @@ struct TBBNeighborUpdater {
                         ) {
 
                     // update needed
-                    simplex.neighbors[d] = dSimplex<D, Precision>::cINF; // reset to infinite
+                    simplex.neighbors[d] = typename DT::tSimplex::cINF; // reset to infinite
 
                     auto facetteHash = simplex.faceFingerprint(d);
                     auto range = facetteLookUp.get(facetteHash);
