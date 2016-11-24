@@ -25,7 +25,7 @@ struct TBBTriangulationMerger {
 
         tbb::parallel_for(
                 typename PartialDTs::size_type(0), partitioning.size(),
-                [&](const uint i) {
+                [&](const typename PartialDTs::size_type i) {
                     edgeExtractor(partialDTs[i],
                                   partitioning.bounds - partitioning[i].bounds,
                                   edgePointIds, edgeSimplexIds);
