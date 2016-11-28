@@ -9,6 +9,7 @@ using tIdType = uint64_t;
 using tHashType = uint32_t;
 using tMarkType = uint8_t;
 using tDimType = uint8_t;
+using tRecDepthType = uint8_t;
 
 using tIdVector = std::vector<tIdType>;
 using tConcurrentIdVector = tbb::concurrent_vector<tIdType>;
