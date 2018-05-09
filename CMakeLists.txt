@@ -25,5 +25,9 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native -std=c11 -pedantic -Wall -Wext
 # add project include directories
 include_directories("${PROJECT_SOURCE_DIR}/include")
 
+find_package(CGAL REQUIRED)
+include(${CGAL_USE_FILE})
+include(CGAL_CreateSingleSourceCGALProgram)
+
 # add all sources
 add_subdirectory(src)

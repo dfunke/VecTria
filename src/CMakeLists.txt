@@ -1,1 +1,1 @@
-add_executable(main main.cpp)
+create_single_source_cgal_program("main.cpp")
