@@ -1,1 +1,4 @@
-create_single_source_cgal_program("main.cpp")
+add_executable(main
+        main.cpp
+        Predicates.cpp
+        )
