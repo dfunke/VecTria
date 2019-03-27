@@ -27,7 +27,6 @@ include_directories("${PROJECT_SOURCE_DIR}/includes")
 
 find_package(CGAL REQUIRED)
 include(${CGAL_USE_FILE})
-include(CGAL_CreateSingleSourceCGALProgram)
 
 # add all sources
 add_subdirectory(src)
