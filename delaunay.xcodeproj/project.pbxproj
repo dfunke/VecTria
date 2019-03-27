@@ -28,6 +28,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		F6AB48A322442A5000EB3520 /* Datastructures.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Datastructures.h; sourceTree = "<group>"; };
 		F6E52A84209B041E00FF501A /* delaunay */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = delaunay; sourceTree = BUILT_PRODUCTS_DIR; };
 		F6E52A8F209B171300FF501A /* libCGAL.13.0.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libCGAL.13.0.1.dylib; path = ../../../../usr/local/Cellar/cgal/4.11.1/lib/libCGAL.13.0.1.dylib; sourceTree = "<group>"; };
 		F6E52A90209B171300FF501A /* libCGAL_Core.13.0.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libCGAL_Core.13.0.1.dylib; path = ../../../../usr/local/Cellar/cgal/4.11.1/lib/libCGAL_Core.13.0.1.dylib; sourceTree = "<group>"; };
@@ -53,9 +54,18 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		F6AB48A222442A1E00EB3520 /* includes */ = {
+			isa = PBXGroup;
+			children = (
+				F6AB48A322442A5000EB3520 /* Datastructures.h */,
+			);
+			path = includes;
+			sourceTree = "<group>";
+		};
 		F6E52A7B209B041E00FF501A = {
 			isa = PBXGroup;
 			children = (
+				F6AB48A222442A1E00EB3520 /* includes */,
 				F6E52A9920A31CCE00FF501A /* main.cpp */,
 				F6E52A85209B041E00FF501A /* Products */,
 				F6E52A8E209B171300FF501A /* Frameworks */,
