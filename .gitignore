@@ -1,6 +1,7 @@
 build
 data
 plot
+cmake-build-*
 
 *.o
 *.a
