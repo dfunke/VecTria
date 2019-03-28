@@ -4,6 +4,8 @@
 #include <array>
 
 using tIndexType = unsigned long;
+constexpr tIndexType INF = ~tIndexType(0);
+
 using tDimType = unsigned short;
 
 template<typename Precision>
@@ -28,7 +30,8 @@ public:
         return m_pointArray(m_idx, i);
     }
 
-    Precision &operator[](const tDimType &i) {
+    template<typename Ret = Precision &>
+    auto operator[](const tDimType &i) -> std::enable_if_t<not std::is_const<PointArray>::value, Ret> {
         return m_pointArray(m_idx, i);
     }
 };
@@ -40,6 +43,7 @@ private:
     std::array<tFloatVector<Precision>, D> coords;
 
     using tPoint = Point<D, Precision, PointAoA<D, Precision>>;
+    using tcPoint = Point<D, Precision, const PointAoA<D, Precision>>;
 
 public:
 
@@ -59,8 +63,16 @@ public:
         }
     }
 
+    tIndexType size() const {
+        return coords[0].size();
+    }
+
     tPoint get(const tIndexType &i) {
         return tPoint(*this, i);
+    }
+
+    tcPoint get(const tIndexType &i) const {
+        return tcPoint(*this, i);
     }
 
 };
@@ -72,6 +84,7 @@ private:
     tFloatVector<Precision> coords;
 
     using tPoint = Point<D, Precision, PointPA<D, Precision>>;
+    using tcPoint = Point<D, Precision, const PointPA<D, Precision>>;
 
 public:
 
@@ -89,8 +102,16 @@ public:
         }
     }
 
+    tIndexType size() const {
+        return coords.size() / D;
+    }
+
     tPoint get(const tIndexType &i) {
         return tPoint(*this, i);
+    }
+
+    tcPoint get(const tIndexType &i) const {
+        return tcPoint(*this, i);
     }
 
 };
@@ -111,19 +132,19 @@ public:
     }
 
     const tIndexType &vertex(const tDimType &i) const {
-        return m_simplexArray.vertices[i][m_idx];
+        return m_simplexArray.vertex(m_idx, i);
     }
 
     tIndexType &vertex(const tDimType &i) {
-        return m_simplexArray.vertices[i][m_idx];
+        return m_simplexArray.vertex(m_idx, i);
     }
 
     const tIndexType &neighbor(const tDimType &i) const {
-        return m_simplexArray.neighbors[i][m_idx];
+        return m_simplexArray.neighbor(m_idx, i);
     }
 
     tIndexType &neighbor(const tDimType &i) {
-        return m_simplexArray.neighbors[i][m_idx];
+        return m_simplexArray.neighbor(m_idx, i);
     }
 
 };
@@ -167,6 +188,10 @@ public:
         }
     }
 
+    tIndexType size() const {
+        return vertices[0].size();
+    }
+
     tSimplex get(const tIndexType &i) {
         return tSimplex(*this, i);
     }
@@ -207,6 +232,10 @@ public:
         if (neighbors.size() < (D + 1) * (i + 1)) {
             neighbors.resize((D + 1) * (i + 1));
         }
+    }
+
+    tIndexType size() const {
+        return vertices.size() / (D + 1);
     }
 
     tSimplex get(const tIndexType &i) {
