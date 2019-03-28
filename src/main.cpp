@@ -262,14 +262,28 @@ int main() {
     valid = checkTriangulation<D, Precision>(simplices_aoa, points_aoa);
     auto t2 = std::chrono::high_resolution_clock::now();
     
-    std::cout << "AOA valid: " << valid << " time "
+    std::cout << "AOA/AOA valid: " << valid << " time "
+    << std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count() << std::endl;
+    
+    t1 = std::chrono::high_resolution_clock::now();
+    valid = checkTriangulation<D, Precision>(simplices_aoa, points_pa);
+    t2 = std::chrono::high_resolution_clock::now();
+    
+    std::cout << "AOA/PA valid: " << valid << " time "
+    << std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count() << std::endl;
+    
+    t1 = std::chrono::high_resolution_clock::now();
+    valid = checkTriangulation<D, Precision>(simplices_pa, points_aoa);
+    t2 = std::chrono::high_resolution_clock::now();
+    
+    std::cout << "PA/AOA valid: " << valid << " time "
     << std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count() << std::endl;
     
     t1 = std::chrono::high_resolution_clock::now();
     valid = checkTriangulation<D, Precision>(simplices_pa, points_pa);
     t2 = std::chrono::high_resolution_clock::now();
     
-    std::cout << "PA valid: " << valid << " time "
+    std::cout << "PA/PA valid: " << valid << " time "
     << std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count() << std::endl;
 
     return 0;
