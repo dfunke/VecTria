@@ -24,7 +24,10 @@ private:
 public:
 
     Point(PointArray &pointArray, const tIndexType &idx)
-            : m_pointArray(pointArray), m_idx(idx) {}
+            : m_pointArray(pointArray), m_idx(idx) {
+                
+        m_pointArray.ensure(m_idx);
+    }
 
     const Precision &operator[](const tDimType &i) const {
         return m_pointArray(m_idx, i);
@@ -59,6 +62,14 @@ public:
         for (tDimType d = 0; d < D + 1; ++d) {
             if (coords[d].size() < i + 1) {
                 coords[d].resize(i + 1);
+            }
+        }
+    }
+    
+    void ensure(const tIndexType &i) const {
+        for (tDimType d = 0; d < D + 1; ++d) {
+            if (coords[d].size() < i + 1) {
+                throw std::out_of_range("point index " + std::to_string(i) + " is out of range " + std::to_string(size()));
             }
         }
     }
@@ -101,6 +112,12 @@ public:
             coords.resize(D * (i + 1));
         }
     }
+    
+    void ensure(const tIndexType &i) const {
+        if (coords.size() < D * (i + 1)) {
+            throw std::out_of_range("point index " + std::to_string(i) + " is out of range " + std::to_string(size() / D));
+        }
+    }
 
     tIndexType size() const {
         return coords.size() / D;
@@ -135,7 +152,8 @@ public:
         return m_simplexArray.vertex(m_idx, i);
     }
 
-    tIndexType &vertex(const tDimType &i) {
+    template<typename Ret = tIndexType &>
+    auto vertex(const tDimType &i) -> std::enable_if_t<not std::is_const<SimplexArray>::value, Ret> {
         return m_simplexArray.vertex(m_idx, i);
     }
 
@@ -143,7 +161,8 @@ public:
         return m_simplexArray.neighbor(m_idx, i);
     }
 
-    tIndexType &neighbor(const tDimType &i) {
+    template<typename Ret = tIndexType &>
+    auto neighbor(const tDimType &i) -> std::enable_if_t<not std::is_const<SimplexArray>::value, Ret> {
         return m_simplexArray.neighbor(m_idx, i);
     }
 
@@ -157,6 +176,7 @@ private:
     std::array<tIndexVector, D + 1> neighbors;
 
     using tSimplex = Simplex<D, SimplexAoA<D>>;
+    using tcSimplex = Simplex<D, const SimplexAoA<D>>;
 
 public:
 
@@ -187,6 +207,14 @@ public:
             }
         }
     }
+    
+    void ensure(const tIndexType &i) const {
+        for (tDimType d = 0; d < D + 1; ++d) {
+            if (std::min(vertices[d].size(), neighbors[d].size()) < i + 1) {
+                throw std::out_of_range("point index " + std::to_string(i) + " is out of range " + std::to_string(size()));
+            }
+        }
+    }
 
     tIndexType size() const {
         return vertices[0].size();
@@ -194,6 +222,10 @@ public:
 
     tSimplex get(const tIndexType &i) {
         return tSimplex(*this, i);
+    }
+    
+    tcSimplex get(const tIndexType &i) const {
+        return tcSimplex(*this, i);
     }
 };
 
@@ -205,6 +237,7 @@ private:
     tIndexVector neighbors;
 
     using tSimplex = Simplex<D, SimplexPA<D>>;
+    using tcSimplex = Simplex<D, const SimplexPA<D>>;
 
 public:
 
@@ -233,6 +266,12 @@ public:
             neighbors.resize((D + 1) * (i + 1));
         }
     }
+    
+    void ensure(const tIndexType &i) const {
+        if (std::min(vertices.size(), neighbors.size()) < (D+1) * (i + 1)) {
+            throw std::out_of_range("point index " + std::to_string(i) + " is out of range " + std::to_string(size() / (D+1)));
+        }
+    }
 
     tIndexType size() const {
         return vertices.size() / (D + 1);
@@ -240,5 +279,9 @@ public:
 
     tSimplex get(const tIndexType &i) {
         return tSimplex(*this, i);
+    }
+    
+    tcSimplex get(const tIndexType &i) const {
+        return tcSimplex(*this, i);
     }
 };

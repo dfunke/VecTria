@@ -162,6 +162,83 @@ struct Triangulator<3> {
     }
 };
 
+template <typename Precision, class Point>
+Precision insphere_fast(const Point &pa, const Point &pb, const Point &pc, const Point &pd,
+                        const Point &pe) {
+    
+    Precision aex, bex, cex, dex;
+    Precision aey, bey, cey, dey;
+    Precision aez, bez, cez, dez;
+    Precision alift, blift, clift, dlift;
+    Precision ab, bc, cd, da, ac, bd;
+    Precision abc, bcd, cda, dab;
+    
+    aex = pa[0] - pe[0];
+    bex = pb[0] - pe[0];
+    cex = pc[0] - pe[0];
+    dex = pd[0] - pe[0];
+    aey = pa[1] - pe[1];
+    bey = pb[1] - pe[1];
+    cey = pc[1] - pe[1];
+    dey = pd[1] - pe[1];
+    aez = pa[2] - pe[2];
+    bez = pb[2] - pe[2];
+    cez = pc[2] - pe[2];
+    dez = pd[2] - pe[2];
+    
+    ab = aex * bey - bex * aey;
+    bc = bex * cey - cex * bey;
+    cd = cex * dey - dex * cey;
+    da = dex * aey - aex * dey;
+    
+    ac = aex * cey - cex * aey;
+    bd = bex * dey - dex * bey;
+    
+    abc = aez * bc - bez * ac + cez * ab;
+    bcd = bez * cd - cez * bd + dez * bc;
+    cda = cez * da + dez * ac + aez * cd;
+    dab = dez * ab + aez * bd + bez * da;
+    
+    alift = aex * aex + aey * aey + aez * aez;
+    blift = bex * bex + bey * bey + bez * bez;
+    clift = cex * cex + cey * cey + cez * cez;
+    dlift = dex * dex + dey * dey + dez * dez;
+    
+    return (dlift * abc - clift * dab) + (blift * cda - alift * bcd);
+}
+
+template <tDimType D, typename Precision, class SimplexArray, class PointArray>
+bool checkTriangulation(const SimplexArray &simplices, const PointArray &points){
+    
+    bool valid = true;
+    
+    for(tIndexType i = 0; i < simplices.size(); ++i){
+        auto s = simplices.get(i);
+        
+        auto pa = points.get(s.vertex(0));
+        auto pb = points.get(s.vertex(1));
+        auto pc = points.get(s.vertex(2));
+        auto pd = points.get(s.vertex(3));
+        
+        for(tDimType n = 0; n < D + 1; ++n){
+            if(s.neighbor(n) != INF){
+                auto sn = simplices.get(n);
+                
+                for(tDimType j = 0; j < D + 1; ++j){
+                    auto pe = points.get(sn.vertex(j));
+                    
+                    Precision det = insphere_fast<Precision>(pa, pb, pc, pd, pe);
+                    if(det <= 0){
+                        valid = false;
+                    }
+                }
+            }
+        }
+    }
+    
+    return valid;
+}
+
 #define D 3
 #define Precision double
 #define N 1e4
@@ -178,6 +255,22 @@ int main() {
 
     auto simplices_aoa = triangulator.triangulate<SimplexAoA<D>>(points_aoa);
     auto simplices_pa = triangulator.triangulate<SimplexPA<D>>(points_pa);
+    
+    bool valid;
+    
+    auto t1 = std::chrono::high_resolution_clock::now();
+    valid = checkTriangulation<D, Precision>(simplices_aoa, points_aoa);
+    auto t2 = std::chrono::high_resolution_clock::now();
+    
+    std::cout << "AOA valid: " << valid << " time "
+    << std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count() << std::endl;
+    
+    t1 = std::chrono::high_resolution_clock::now();
+    valid = checkTriangulation<D, Precision>(simplices_pa, points_pa);
+    t2 = std::chrono::high_resolution_clock::now();
+    
+    std::cout << "PA valid: " << valid << " time "
+    << std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count() << std::endl;
 
     return 0;
 
