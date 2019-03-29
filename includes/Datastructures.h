@@ -59,7 +59,7 @@ public:
     }
 
     void ensure(const tIndexType &i) {
-        for (tDimType d = 0; d < D + 1; ++d) {
+        for (tDimType d = 0; d < D; ++d) {
             if (coords[d].size() < i + 1) {
                 coords[d].resize(i + 1);
             }
@@ -67,7 +67,7 @@ public:
     }
     
     void ensure(const tIndexType &i) const {
-        for (tDimType d = 0; d < D + 1; ++d) {
+        for (tDimType d = 0; d < D; ++d) {
             if (coords[d].size() < i + 1) {
                 throw std::out_of_range("point index " + std::to_string(i) + " is out of range " + std::to_string(size()));
             }
