@@ -4,6 +4,7 @@
 
 #include <random>
 #include <functional>
+#include <chrono>
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 
@@ -228,7 +229,7 @@ bool checkTriangulation(const SimplexArray &simplices, const PointArray &points)
                     auto pe = points.get(sn.vertex(j));
                     
                     Precision det = insphere_fast<Precision>(pa, pb, pc, pd, pe);
-                    if(det <= 0){
+                    if(det < 0){
                         valid = false;
                     }
                 }
