@@ -242,7 +242,7 @@ bool checkTriangulation(const SimplexArray &simplices, const PointArray &points)
 
 #define D 3
 #define Precision double
-#define N 1e4
+#define N 1e6
 
 int main() {
 
@@ -263,28 +263,28 @@ int main() {
     valid = checkTriangulation<D, Precision>(simplices_aoa, points_aoa);
     auto t2 = std::chrono::high_resolution_clock::now();
     
-    std::cout << "AOA/AOA valid: " << valid << " time "
+    std::cout << "sAOA/pAOA valid: " << valid << " time "
     << std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count() << std::endl;
     
     t1 = std::chrono::high_resolution_clock::now();
     valid = checkTriangulation<D, Precision>(simplices_aoa, points_pa);
     t2 = std::chrono::high_resolution_clock::now();
     
-    std::cout << "AOA/PA valid: " << valid << " time "
+    std::cout << "sAOA/pPA valid: " << valid << " time "
     << std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count() << std::endl;
     
     t1 = std::chrono::high_resolution_clock::now();
     valid = checkTriangulation<D, Precision>(simplices_pa, points_aoa);
     t2 = std::chrono::high_resolution_clock::now();
     
-    std::cout << "PA/AOA valid: " << valid << " time "
+    std::cout << "sPA/pAOA valid: " << valid << " time "
     << std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count() << std::endl;
     
     t1 = std::chrono::high_resolution_clock::now();
     valid = checkTriangulation<D, Precision>(simplices_pa, points_pa);
     t2 = std::chrono::high_resolution_clock::now();
     
-    std::cout << "PA/PA valid: " << valid << " time "
+    std::cout << "sPA/pPA valid: " << valid << " time "
     << std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count() << std::endl;
 
     return 0;
