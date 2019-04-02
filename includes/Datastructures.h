@@ -25,7 +25,7 @@ public:
 
     Point(PointArray &pointArray, const tIndexType &idx)
             : m_pointArray(pointArray), m_idx(idx) {
-                
+
         m_pointArray.ensure(m_idx);
     }
 
@@ -50,6 +50,50 @@ private:
 
 public:
 
+    Precision insphere_fast(const tIndexType &pa, const tIndexType &pb, const tIndexType &pc, const tIndexType &pd,
+                            const tIndexType &pe) const {
+
+        Precision aex, bex, cex, dex;
+        Precision aey, bey, cey, dey;
+        Precision aez, bez, cez, dez;
+        Precision alift, blift, clift, dlift;
+        Precision ab, bc, cd, da, ac, bd;
+        Precision abc, bcd, cda, dab;
+
+        aex = coords[0][pa] - coords[0][pe];
+        bex = coords[0][pb] - coords[0][pe];
+        cex = coords[0][pc] - coords[0][pe];
+        dex = coords[0][pd] - coords[0][pe];
+        aey = coords[1][pa] - coords[1][pe];
+        bey = coords[1][pb] - coords[1][pe];
+        cey = coords[1][pc] - coords[1][pe];
+        dey = coords[1][pd] - coords[1][pe];
+        aez = coords[2][pa] - coords[2][pe];
+        bez = coords[2][pb] - coords[2][pe];
+        cez = coords[2][pc] - coords[2][pe];
+        dez = coords[2][pd] - coords[2][pe];
+
+        ab = aex * bey - bex * aey;
+        bc = bex * cey - cex * bey;
+        cd = cex * dey - dex * cey;
+        da = dex * aey - aex * dey;
+
+        ac = aex * cey - cex * aey;
+        bd = bex * dey - dex * bey;
+
+        abc = aez * bc - bez * ac + cez * ab;
+        bcd = bez * cd - cez * bd + dez * bc;
+        cda = cez * da + dez * ac + aez * cd;
+        dab = dez * ab + aez * bd + bez * da;
+
+        alift = aex * aex + aey * aey + aez * aez;
+        blift = bex * bex + bey * bey + bez * bez;
+        clift = cex * cex + cey * cey + cez * cez;
+        dlift = dex * dex + dey * dey + dez * dez;
+
+        return (dlift * abc - clift * dab) + (blift * cda - alift * bcd);
+    };
+
     const Precision &operator()(const tIndexType &i, const tDimType &d) const {
         return coords[d][i];
     }
@@ -65,11 +109,12 @@ public:
             }
         }
     }
-    
+
     void ensure(const tIndexType &i) const {
         for (tDimType d = 0; d < D; ++d) {
             if (coords[d].size() < i + 1) {
-                throw std::out_of_range("point index " + std::to_string(i) + " is out of range " + std::to_string(size()));
+                throw std::out_of_range(
+                        "point index " + std::to_string(i) + " is out of range " + std::to_string(size()));
             }
         }
     }
@@ -99,6 +144,50 @@ private:
 
 public:
 
+    Precision insphere_fast(const tIndexType &pa, const tIndexType &pb, const tIndexType &pc, const tIndexType &pd,
+                            const tIndexType &pe) const {
+
+        Precision aex, bex, cex, dex;
+        Precision aey, bey, cey, dey;
+        Precision aez, bez, cez, dez;
+        Precision alift, blift, clift, dlift;
+        Precision ab, bc, cd, da, ac, bd;
+        Precision abc, bcd, cda, dab;
+
+        aex = coords[pa + 0] - coords[pe + 0];
+        bex = coords[pb + 0] - coords[pe + 0];
+        cex = coords[pc + 0] - coords[pe + 0];
+        dex = coords[pd + 0] - coords[pe + 0];
+        aey = coords[pa + 1] - coords[pe + 1];
+        bey = coords[pb + 1] - coords[pe + 1];
+        cey = coords[pc + 1] - coords[pe + 1];
+        dey = coords[pd + 1] - coords[pe + 1];
+        aez = coords[pa + 2] - coords[pe + 2];
+        bez = coords[pb + 2] - coords[pe + 2];
+        cez = coords[pc + 2] - coords[pe + 2];
+        dez = coords[pd + 2] - coords[pe + 2];
+
+        ab = aex * bey - bex * aey;
+        bc = bex * cey - cex * bey;
+        cd = cex * dey - dex * cey;
+        da = dex * aey - aex * dey;
+
+        ac = aex * cey - cex * aey;
+        bd = bex * dey - dex * bey;
+
+        abc = aez * bc - bez * ac + cez * ab;
+        bcd = bez * cd - cez * bd + dez * bc;
+        cda = cez * da + dez * ac + aez * cd;
+        dab = dez * ab + aez * bd + bez * da;
+
+        alift = aex * aex + aey * aey + aez * aez;
+        blift = bex * bex + bey * bey + bez * bez;
+        clift = cex * cex + cey * cey + cez * cez;
+        dlift = dex * dex + dey * dey + dez * dez;
+
+        return (dlift * abc - clift * dab) + (blift * cda - alift * bcd);
+    };
+
     const Precision &operator()(const tIndexType &i, const tDimType &d) const {
         return coords[D * i + d];
     }
@@ -112,10 +201,11 @@ public:
             coords.resize(D * (i + 1));
         }
     }
-    
+
     void ensure(const tIndexType &i) const {
         if (coords.size() < D * (i + 1)) {
-            throw std::out_of_range("point index " + std::to_string(i) + " is out of range " + std::to_string(size() / D));
+            throw std::out_of_range(
+                    "point index " + std::to_string(i) + " is out of range " + std::to_string(size() / D));
         }
     }
 
@@ -207,11 +297,12 @@ public:
             }
         }
     }
-    
+
     void ensure(const tIndexType &i) const {
         for (tDimType d = 0; d < D + 1; ++d) {
             if (std::min(vertices[d].size(), neighbors[d].size()) < i + 1) {
-                throw std::out_of_range("point index " + std::to_string(i) + " is out of range " + std::to_string(size()));
+                throw std::out_of_range(
+                        "point index " + std::to_string(i) + " is out of range " + std::to_string(size()));
             }
         }
     }
@@ -223,7 +314,7 @@ public:
     tSimplex get(const tIndexType &i) {
         return tSimplex(*this, i);
     }
-    
+
     tcSimplex get(const tIndexType &i) const {
         return tcSimplex(*this, i);
     }
@@ -266,10 +357,11 @@ public:
             neighbors.resize((D + 1) * (i + 1));
         }
     }
-    
+
     void ensure(const tIndexType &i) const {
-        if (std::min(vertices.size(), neighbors.size()) < (D+1) * (i + 1)) {
-            throw std::out_of_range("point index " + std::to_string(i) + " is out of range " + std::to_string(size() / (D+1)));
+        if (std::min(vertices.size(), neighbors.size()) < (D + 1) * (i + 1)) {
+            throw std::out_of_range(
+                    "point index " + std::to_string(i) + " is out of range " + std::to_string(size() / (D + 1)));
         }
     }
 
@@ -280,7 +372,7 @@ public:
     tSimplex get(const tIndexType &i) {
         return tSimplex(*this, i);
     }
-    
+
     tcSimplex get(const tIndexType &i) const {
         return tcSimplex(*this, i);
     }

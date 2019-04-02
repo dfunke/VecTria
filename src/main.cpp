@@ -20,6 +20,10 @@
 #include <CGAL/Triangulation_vertex_base_with_info_3.h>
 #include <CGAL/Triangulation_cell_base_with_info_3.h>
 
+#ifdef HAS_VTUNE
+#include <ittnotify.h>
+#endif
+
 #include "Datastructures.h"
 #include "Predicates.h"
 
@@ -78,14 +82,14 @@ struct Triangulator<2> {
         DT_2 T(P.begin(), P.end());
 
         tIndexType simplexId = 0;
-        for(auto it = T.finite_faces_begin(); it != T.finite_faces_end(); ++it){
+        for (auto it = T.finite_faces_begin(); it != T.finite_faces_end(); ++it) {
             it->info() = simplexId++;
         }
 
         SimplexArray simplices;
         simplices.ensure(simplexId - 1);
 
-        for(auto it = T.finite_faces_begin(); it != T.finite_faces_end(); ++it){
+        for (auto it = T.finite_faces_begin(); it != T.finite_faces_end(); ++it) {
             tIndexType id = it->info();
             auto s = simplices.get(id);
 
@@ -136,14 +140,14 @@ struct Triangulator<3> {
         DT_3 T(P.begin(), P.end());
 
         tIndexType simplexId = 0;
-        for(auto it = T.finite_cells_begin(); it != T.finite_cells_end(); ++it){
+        for (auto it = T.finite_cells_begin(); it != T.finite_cells_end(); ++it) {
             it->info() = simplexId++;
         }
 
         SimplexArray simplices;
         simplices.ensure(simplexId - 1);
 
-        for(auto it = T.finite_cells_begin(); it != T.finite_cells_end(); ++it){
+        for (auto it = T.finite_cells_begin(); it != T.finite_cells_end(); ++it) {
             tIndexType id = it->info();
             auto s = simplices.get(id);
 
@@ -163,88 +167,50 @@ struct Triangulator<3> {
     }
 };
 
-template <typename Precision, class Point>
-Precision insphere_fast(const Point &pa, const Point &pb, const Point &pc, const Point &pd,
-                        const Point &pe) {
-    
-    Precision aex, bex, cex, dex;
-    Precision aey, bey, cey, dey;
-    Precision aez, bez, cez, dez;
-    Precision alift, blift, clift, dlift;
-    Precision ab, bc, cd, da, ac, bd;
-    Precision abc, bcd, cda, dab;
-    
-    aex = pa[0] - pe[0];
-    bex = pb[0] - pe[0];
-    cex = pc[0] - pe[0];
-    dex = pd[0] - pe[0];
-    aey = pa[1] - pe[1];
-    bey = pb[1] - pe[1];
-    cey = pc[1] - pe[1];
-    dey = pd[1] - pe[1];
-    aez = pa[2] - pe[2];
-    bez = pb[2] - pe[2];
-    cez = pc[2] - pe[2];
-    dez = pd[2] - pe[2];
-    
-    ab = aex * bey - bex * aey;
-    bc = bex * cey - cex * bey;
-    cd = cex * dey - dex * cey;
-    da = dex * aey - aex * dey;
-    
-    ac = aex * cey - cex * aey;
-    bd = bex * dey - dex * bey;
-    
-    abc = aez * bc - bez * ac + cez * ab;
-    bcd = bez * cd - cez * bd + dez * bc;
-    cda = cez * da + dez * ac + aez * cd;
-    dab = dez * ab + aez * bd + bez * da;
-    
-    alift = aex * aex + aey * aey + aez * aez;
-    blift = bex * bex + bey * bey + bez * bez;
-    clift = cex * cex + cey * cey + cez * cez;
-    dlift = dex * dex + dey * dey + dez * dez;
-    
-    return (dlift * abc - clift * dab) + (blift * cda - alift * bcd);
-}
+template<tDimType D, typename Precision>
+struct Checker;
 
-template <tDimType D, typename Precision, class SimplexArray, class PointArray>
-bool checkTriangulation(const SimplexArray &simplices, const PointArray &points){
-    
-    bool valid = true;
-    
-    for(tIndexType i = 0; i < simplices.size(); ++i){
-        auto s = simplices.get(i);
-        
-        auto pa = points.get(s.vertex(0));
-        auto pb = points.get(s.vertex(1));
-        auto pc = points.get(s.vertex(2));
-        auto pd = points.get(s.vertex(3));
-        
-        for(tDimType n = 0; n < D + 1; ++n){
-            if(s.neighbor(n) != INF){
-                auto sn = simplices.get(n);
-                
-                for(tDimType j = 0; j < D + 1; ++j){
-                    auto pe = points.get(sn.vertex(j));
-                    
-                    Precision det = insphere_fast<Precision>(pa, pb, pc, pd, pe);
-                    if(det < 0){
-                        valid = false;
+template<typename Precision>
+struct Checker<3, Precision> {
+
+    static constexpr tDimType D = 3;
+
+    template<class SimplexArray, class PointArray>
+    bool check(const SimplexArray &simplices, const PointArray &points) {
+
+        bool valid = true;
+
+        for (tIndexType i = 0; i < simplices.size(); ++i) {
+            auto s = simplices.get(i);
+
+            for (tDimType n = 0; n < D + 1; ++n) {
+                if (s.neighbor(n) != INF) {
+                    auto sn = simplices.get(n);
+
+                    for (tDimType j = 0; j < D + 1; ++j) {
+                        Precision det = points.insphere_fast(s.vertex(0), s.vertex(1), s.vertex(2), s.vertex(3),
+                                                             sn.vertex(j));
+                        if (det < 0) {
+                            valid = false;
+                        }
                     }
                 }
             }
         }
+
+        return valid;
     }
-    
-    return valid;
-}
+};
 
 #define D 3
 #define Precision double
 #define N 1e6
 
 int main() {
+
+#ifdef HAS_VTUNE
+    //    __itt_pause();
+#endif
 
     PointAoA<D, Precision> points_aoa;
     generatePoints<D, Precision>(points_aoa, N);
@@ -256,36 +222,41 @@ int main() {
 
     auto simplices_aoa = triangulator.triangulate<SimplexAoA<D>>(points_aoa);
     auto simplices_pa = triangulator.triangulate<SimplexPA<D>>(points_pa);
-    
+
     bool valid;
-    
+    Checker<D, Precision> checker;
+
+#ifdef HAS_VTUNE
+    //    __itt_resume();
+#endif
+
     auto t1 = std::chrono::high_resolution_clock::now();
-    valid = checkTriangulation<D, Precision>(simplices_aoa, points_aoa);
+    valid = checker.check(simplices_aoa, points_aoa);
     auto t2 = std::chrono::high_resolution_clock::now();
-    
+
     std::cout << "sAOA/pAOA valid: " << valid << " time "
-    << std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count() << std::endl;
-    
+              << std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count() << std::endl;
+
     t1 = std::chrono::high_resolution_clock::now();
-    valid = checkTriangulation<D, Precision>(simplices_aoa, points_pa);
+    valid = checker.check(simplices_aoa, points_pa);
     t2 = std::chrono::high_resolution_clock::now();
-    
+
     std::cout << "sAOA/pPA valid: " << valid << " time "
-    << std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count() << std::endl;
-    
+              << std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count() << std::endl;
+
     t1 = std::chrono::high_resolution_clock::now();
-    valid = checkTriangulation<D, Precision>(simplices_pa, points_aoa);
+    valid = checker.check(simplices_pa, points_aoa);
     t2 = std::chrono::high_resolution_clock::now();
-    
+
     std::cout << "sPA/pAOA valid: " << valid << " time "
-    << std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count() << std::endl;
-    
+              << std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count() << std::endl;
+
     t1 = std::chrono::high_resolution_clock::now();
-    valid = checkTriangulation<D, Precision>(simplices_pa, points_pa);
+    valid = checker.check(simplices_pa, points_pa);
     t2 = std::chrono::high_resolution_clock::now();
-    
+
     std::cout << "sPA/pPA valid: " << valid << " time "
-    << std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count() << std::endl;
+              << std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count() << std::endl;
 
     return 0;
 
