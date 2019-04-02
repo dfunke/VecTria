@@ -18,8 +18,13 @@ if (NOT CCACHE_PROG MATCHES NOTFOUND)
   set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
 endif ()
 
+# adds the project-specific cmake module directory cmake/Modules to the cmake
+# search path
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/")
+
 # setup modern c++ flags
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -std=c++17 -pedantic -Wall -Wextra")
+string(REPLACE "-O2" "-O3" CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -std=c++17 -pedantic -Wall -Wextra -ftree-vectorize -fopt-info-vec-all")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native -std=c11 -pedantic -Wall -Wextra")
 
 # add project include directories
@@ -27,6 +32,16 @@ include_directories("${PROJECT_SOURCE_DIR}/includes")
 
 find_package(CGAL REQUIRED)
 include(${CGAL_USE_FILE})
+
+find_package(VTune)
+if(VTUNE_FOUND)
+    message(STATUS "VTUNE instrumentation enabled")
+    include_directories(
+            SYSTEM
+            ${VTUNE_INCLUDE_DIRS}
+    )
+    add_definitions(-DHAS_VTUNE)
+endif()
 
 # add all sources
 add_subdirectory(src)
