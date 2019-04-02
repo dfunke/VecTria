@@ -209,7 +209,7 @@ struct Checker<3, Precision> {
 int main() {
 
 #ifdef HAS_VTUNE
-    //    __itt_pause();
+        __itt_pause();
 #endif
 
     PointAoA<D, Precision> points_aoa;
@@ -227,7 +227,7 @@ int main() {
     Checker<D, Precision> checker;
 
 #ifdef HAS_VTUNE
-    //    __itt_resume();
+        __itt_resume();
 #endif
 
     auto t1 = std::chrono::high_resolution_clock::now();
