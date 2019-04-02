@@ -145,10 +145,10 @@ public:
         Precision abc, bcd, cda, dab;
 
         for (uint d = 0; d < D; ++d) {
-            ae[d] = coords[pa + d] - coords[pe + d];
-            be[d] = coords[pb + d] - coords[pe + d];
-            ce[d] = coords[pc + d] - coords[pe + d];
-            de[d] = coords[pd + d] - coords[pe + d];
+            ae[d] = coords[D * pa + d] - coords[D * pe + d];
+            be[d] = coords[D * pb + d] - coords[D * pe + d];
+            ce[d] = coords[D * pc + d] - coords[D * pe + d];
+            de[d] = coords[D * pd + d] - coords[D * pe + d];
         }
 
         ab = ae[0] * be[1] - be[0] * ae[1];
