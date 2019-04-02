@@ -53,43 +53,35 @@ public:
     Precision insphere_fast(const tIndexType &pa, const tIndexType &pb, const tIndexType &pc, const tIndexType &pd,
                             const tIndexType &pe) const {
 
-        Precision aex, bex, cex, dex;
-        Precision aey, bey, cey, dey;
-        Precision aez, bez, cez, dez;
+        Precision ae[D], be[D], ce[D], de[D];
         Precision alift, blift, clift, dlift;
         Precision ab, bc, cd, da, ac, bd;
         Precision abc, bcd, cda, dab;
 
-        aex = coords[0][pa] - coords[0][pe];
-        bex = coords[0][pb] - coords[0][pe];
-        cex = coords[0][pc] - coords[0][pe];
-        dex = coords[0][pd] - coords[0][pe];
-        aey = coords[1][pa] - coords[1][pe];
-        bey = coords[1][pb] - coords[1][pe];
-        cey = coords[1][pc] - coords[1][pe];
-        dey = coords[1][pd] - coords[1][pe];
-        aez = coords[2][pa] - coords[2][pe];
-        bez = coords[2][pb] - coords[2][pe];
-        cez = coords[2][pc] - coords[2][pe];
-        dez = coords[2][pd] - coords[2][pe];
+        for (uint d = 0; d < D; ++d) {
+            ae[d] = coords[d][pa] - coords[d][pe];
+            be[d] = coords[d][pb] - coords[d][pe];
+            ce[d] = coords[d][pc] - coords[d][pe];
+            de[d] = coords[d][pd] - coords[d][pe];
+        }
 
-        ab = aex * bey - bex * aey;
-        bc = bex * cey - cex * bey;
-        cd = cex * dey - dex * cey;
-        da = dex * aey - aex * dey;
+        ab = ae[0] * be[1] - be[0] * ae[1];
+        bc = be[0] * ce[1] - ce[0] * be[1];
+        cd = ce[0] * de[1] - de[0] * ce[1];
+        da = de[0] * ae[1] - ae[0] * de[1];
 
-        ac = aex * cey - cex * aey;
-        bd = bex * dey - dex * bey;
+        ac = ae[0] * ce[1] - ce[0] * ae[1];
+        bd = be[0] * de[1] - de[0] * be[1];
 
-        abc = aez * bc - bez * ac + cez * ab;
-        bcd = bez * cd - cez * bd + dez * bc;
-        cda = cez * da + dez * ac + aez * cd;
-        dab = dez * ab + aez * bd + bez * da;
+        abc = ae[2] * bc - be[2] * ac + ce[2] * ab;
+        bcd = be[2] * cd - ce[2] * bd + de[2] * bc;
+        cda = ce[2] * da + de[2] * ac + ae[2] * cd;
+        dab = de[2] * ab + ae[2] * bd + be[2] * da;
 
-        alift = aex * aex + aey * aey + aez * aez;
-        blift = bex * bex + bey * bey + bez * bez;
-        clift = cex * cex + cey * cey + cez * cez;
-        dlift = dex * dex + dey * dey + dez * dez;
+        alift = ae[0] * ae[0] + ae[1] * ae[1] + ae[2] * ae[2];
+        blift = be[0] * be[0] + be[1] * be[1] + be[2] * be[2];
+        clift = ce[0] * ce[0] + ce[1] * ce[1] + ce[2] * ce[2];
+        dlift = de[0] * de[0] + de[1] * de[1] + de[2] * de[2];
 
         return (dlift * abc - clift * dab) + (blift * cda - alift * bcd);
     };
@@ -147,43 +139,35 @@ public:
     Precision insphere_fast(const tIndexType &pa, const tIndexType &pb, const tIndexType &pc, const tIndexType &pd,
                             const tIndexType &pe) const {
 
-        Precision aex, bex, cex, dex;
-        Precision aey, bey, cey, dey;
-        Precision aez, bez, cez, dez;
+        Precision ae[D], be[D], ce[D], de[D];
         Precision alift, blift, clift, dlift;
         Precision ab, bc, cd, da, ac, bd;
         Precision abc, bcd, cda, dab;
 
-        aex = coords[pa + 0] - coords[pe + 0];
-        bex = coords[pb + 0] - coords[pe + 0];
-        cex = coords[pc + 0] - coords[pe + 0];
-        dex = coords[pd + 0] - coords[pe + 0];
-        aey = coords[pa + 1] - coords[pe + 1];
-        bey = coords[pb + 1] - coords[pe + 1];
-        cey = coords[pc + 1] - coords[pe + 1];
-        dey = coords[pd + 1] - coords[pe + 1];
-        aez = coords[pa + 2] - coords[pe + 2];
-        bez = coords[pb + 2] - coords[pe + 2];
-        cez = coords[pc + 2] - coords[pe + 2];
-        dez = coords[pd + 2] - coords[pe + 2];
+        for (uint d = 0; d < D; ++d) {
+            ae[d] = coords[pa + d] - coords[pe + d];
+            be[d] = coords[pb + d] - coords[pe + d];
+            ce[d] = coords[pc + d] - coords[pe + d];
+            de[d] = coords[pd + d] - coords[pe + d];
+        }
 
-        ab = aex * bey - bex * aey;
-        bc = bex * cey - cex * bey;
-        cd = cex * dey - dex * cey;
-        da = dex * aey - aex * dey;
+        ab = ae[0] * be[1] - be[0] * ae[1];
+        bc = be[0] * ce[1] - ce[0] * be[1];
+        cd = ce[0] * de[1] - de[0] * ce[1];
+        da = de[0] * ae[1] - ae[0] * de[1];
 
-        ac = aex * cey - cex * aey;
-        bd = bex * dey - dex * bey;
+        ac = ae[0] * ce[1] - ce[0] * ae[1];
+        bd = be[0] * de[1] - de[0] * be[1];
 
-        abc = aez * bc - bez * ac + cez * ab;
-        bcd = bez * cd - cez * bd + dez * bc;
-        cda = cez * da + dez * ac + aez * cd;
-        dab = dez * ab + aez * bd + bez * da;
+        abc = ae[2] * bc - be[2] * ac + ce[2] * ab;
+        bcd = be[2] * cd - ce[2] * bd + de[2] * bc;
+        cda = ce[2] * da + de[2] * ac + ae[2] * cd;
+        dab = de[2] * ab + ae[2] * bd + be[2] * da;
 
-        alift = aex * aex + aey * aey + aez * aez;
-        blift = bex * bex + bey * bey + bez * bez;
-        clift = cex * cex + cey * cey + cez * cez;
-        dlift = dex * dex + dey * dey + dez * dez;
+        alift = ae[0] * ae[0] + ae[1] * ae[1] + ae[2] * ae[2];
+        blift = be[0] * be[0] + be[1] * be[1] + be[2] * be[2];
+        clift = ce[0] * ce[0] + ce[1] * ce[1] + ce[2] * ce[2];
+        dlift = de[0] * de[0] + de[1] * de[1] + de[2] * de[2];
 
         return (dlift * abc - clift * dab) + (blift * cda - alift * bcd);
     };
