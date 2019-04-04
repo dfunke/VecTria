@@ -31,6 +31,9 @@
 		F6AB48A322442A5000EB3520 /* Datastructures.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Datastructures.h; sourceTree = "<group>"; };
 		F6CDBEC1224CB52C00A84D5E /* libCGAL.13.0.2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libCGAL.13.0.2.dylib; path = ../../../../usr/local/Cellar/cgal/4.13/lib/libCGAL.13.0.2.dylib; sourceTree = "<group>"; };
 		F6CDBEC2224CB52C00A84D5E /* libCGAL_Core.13.0.2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libCGAL_Core.13.0.2.dylib; path = ../../../../usr/local/Cellar/cgal/4.13/lib/libCGAL_Core.13.0.2.dylib; sourceTree = "<group>"; };
+		F6CDBEC722568E0C00A84D5E /* GeometryStructures.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GeometryStructures.h; sourceTree = "<group>"; };
+		F6CDBEC822568E0C00A84D5E /* Predicates.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Predicates.h; sourceTree = "<group>"; };
+		F6CDBEC922568E0C00A84D5E /* MathTools.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MathTools.h; sourceTree = "<group>"; };
 		F6E52A84209B041E00FF501A /* delaunay */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = delaunay; sourceTree = BUILT_PRODUCTS_DIR; };
 		F6E52A8F209B171300FF501A /* libCGAL.13.0.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libCGAL.13.0.1.dylib; path = ../../../../usr/local/Cellar/cgal/4.11.1/lib/libCGAL.13.0.1.dylib; sourceTree = "<group>"; };
 		F6E52A90209B171300FF501A /* libCGAL_Core.13.0.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libCGAL_Core.13.0.1.dylib; path = ../../../../usr/local/Cellar/cgal/4.11.1/lib/libCGAL_Core.13.0.1.dylib; sourceTree = "<group>"; };
@@ -59,6 +62,9 @@
 		F6AB48A222442A1E00EB3520 /* includes */ = {
 			isa = PBXGroup;
 			children = (
+				F6CDBEC722568E0C00A84D5E /* GeometryStructures.h */,
+				F6CDBEC922568E0C00A84D5E /* MathTools.h */,
+				F6CDBEC822568E0C00A84D5E /* Predicates.h */,
 				F6AB48A322442A5000EB3520 /* Datastructures.h */,
 			);
 			path = includes;

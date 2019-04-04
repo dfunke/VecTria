@@ -108,15 +108,15 @@ public:
 
 };
 
-template<tDimType D, template<typename, tDimType> class MemoryLayout>
+template<tDimType D, typename Precision, template<typename, tDimType> class MemoryLayout>
 class SimplexArray {
 
 private:
     MemoryLayout<tIndexType, D + 1> vertices;
     MemoryLayout<tIndexType, D + 1> neighbors;
 
-    using tSimplex = Simplex<D, SimplexArray<D, MemoryLayout>>;
-    using tcSimplex = Simplex<D, const SimplexArray<D, MemoryLayout>>;
+    using tSimplex = Simplex<D, SimplexArray<D, Precision, MemoryLayout>>;
+    using tcSimplex = Simplex<D, const SimplexArray<D, Precision, MemoryLayout>>;
 
 public:
 
