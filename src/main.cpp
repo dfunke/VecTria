@@ -24,7 +24,7 @@
 #include <ittnotify.h>
 #endif
 
-#include "Datastructures.h"
+#include "GeometryStructures.h"
 #include "Predicates.h"
 
 #define SEED 1986
@@ -188,8 +188,8 @@ struct Checker<3, Precision> {
                     auto sn = simplices.get(n);
 
                     for (tDimType j = 0; j < D + 1; ++j) {
-                        Precision det = points.insphere_fast(s.vertex(0), s.vertex(1), s.vertex(2), s.vertex(3),
-                                                             sn.vertex(j));
+                        Precision det = insphere_fast<D, Precision>(s.vertex(0), s.vertex(1), s.vertex(2), s.vertex(3),
+                                                                    sn.vertex(j), points);
 
                         if (det < 0) {
                             valid = false;
