@@ -2,11 +2,16 @@
 
 #include <vector>
 #include <array>
+#include "MathTools.h"
 
 using tIndexType = unsigned long;
 constexpr tIndexType INF = ~tIndexType(0);
 
 using tDimType = unsigned short;
+
+constexpr tDimType X = 0;
+constexpr tDimType Y = 1;
+constexpr tDimType Z = 2;
 
 template<typename Precision>
 using tFloatVector = std::vector<Precision>;
@@ -50,6 +55,63 @@ private:
 
 public:
 
+    std::array<Precision, D + 1>
+    subdeterminants(const tIndexType &pa, const tIndexType &pb, const tIndexType &pc, const tIndexType &pd) const {
+
+        Precision ab[D], ac[D], ad[D];
+        Precision blift, clift, dlift;
+
+        for (uint i = 0; i < D; ++i) {
+            ab[i] = coords[i][pb] - coords[i][pa];
+            ac[i] = coords[i][pc] - coords[i][pa];
+            ad[i] = coords[i][pd] - coords[i][pa];
+        }
+
+        blift = ab[X] * ab[X] + ab[Y] * ab[Y] + ab[Z] * ab[Z];
+        clift = ac[X] * ac[X] + ac[Y] * ac[Y] + ac[Z] * ac[Z];
+        dlift = ad[X] * ad[X] + ad[Y] * ad[Y] + ad[Z] * ad[Z];
+
+        std::array<Precision, D + 1> subdets;
+
+        subdets[0] = determinant3x3<Precision>(ab[Y], ab[Z], blift,
+                                               ac[Y], ac[Z], clift,
+                                               ad[Y], ad[Z], dlift);
+
+        subdets[1] = determinant3x3<Precision>(ab[X], ab[Z], blift,
+                                               ac[X], ac[Z], clift,
+                                               ad[X], ad[Z], dlift);
+
+        subdets[2] = determinant3x3<Precision>(ab[X], ab[Y], blift,
+                                               ac[X], ac[Y], clift,
+                                               ad[X], ad[Y], dlift);
+
+        subdets[3] = determinant3x3<Precision>(ab[X], ab[Y], ab[Z],
+                                               ac[X], ac[Y], ac[Z],
+                                               ad[X], ad[Y], ad[Z]);
+
+        return subdets;
+
+    }
+
+    Precision insphere_fast(const tIndexType &pa,
+                            __attribute__((unused)) const tIndexType &pb,
+                            __attribute__((unused)) const tIndexType &pc,
+                            __attribute__((unused)) const tIndexType &pd,
+                            const tIndexType &pe, const std::array<Precision, D + 1> &subdets) const {
+
+        Precision ae[D];
+        Precision elift;
+
+        for (uint i = 0; i < D; ++i) {
+            ae[i] = coords[i][pe] - coords[i][pa];
+        }
+
+        elift = ae[X] * ae[X] + ae[Y] * ae[Y] + ae[Z] * ae[Z];
+
+        return -ae[X] * subdets[0] + ae[Y] * subdets[1] - ae[Z] * subdets[2] + elift * subdets[3];
+
+    }
+
     Precision insphere_fast(const tIndexType &pa, const tIndexType &pb, const tIndexType &pc, const tIndexType &pd,
                             const tIndexType &pe) const {
 
@@ -58,30 +120,30 @@ public:
         Precision ab, bc, cd, da, ac, bd;
         Precision abc, bcd, cda, dab;
 
-        for (uint d = 0; d < D; ++d) {
-            ae[d] = coords[d][pa] - coords[d][pe];
-            be[d] = coords[d][pb] - coords[d][pe];
-            ce[d] = coords[d][pc] - coords[d][pe];
-            de[d] = coords[d][pd] - coords[d][pe];
+        for (uint i = 0; i < D; ++i) {
+            ae[i] = coords[i][pa] - coords[i][pe];
+            be[i] = coords[i][pb] - coords[i][pe];
+            ce[i] = coords[i][pc] - coords[i][pe];
+            de[i] = coords[i][pd] - coords[i][pe];
         }
 
-        ab = ae[0] * be[1] - be[0] * ae[1];
-        bc = be[0] * ce[1] - ce[0] * be[1];
-        cd = ce[0] * de[1] - de[0] * ce[1];
-        da = de[0] * ae[1] - ae[0] * de[1];
+        ab = ae[X] * be[Y] - be[X] * ae[Y];
+        bc = be[X] * ce[Y] - ce[X] * be[Y];
+        cd = ce[X] * de[Y] - de[X] * ce[Y];
+        da = de[X] * ae[Y] - ae[X] * de[Y];
 
-        ac = ae[0] * ce[1] - ce[0] * ae[1];
-        bd = be[0] * de[1] - de[0] * be[1];
+        ac = ae[X] * ce[Y] - ce[X] * ae[Y];
+        bd = be[X] * de[Y] - de[X] * be[Y];
 
-        abc = ae[2] * bc - be[2] * ac + ce[2] * ab;
-        bcd = be[2] * cd - ce[2] * bd + de[2] * bc;
-        cda = ce[2] * da + de[2] * ac + ae[2] * cd;
-        dab = de[2] * ab + ae[2] * bd + be[2] * da;
+        abc = ae[Z] * bc - be[Z] * ac + ce[Z] * ab;
+        bcd = be[Z] * cd - ce[Z] * bd + de[Z] * bc;
+        cda = ce[Z] * da + de[Z] * ac + ae[Z] * cd;
+        dab = de[Z] * ab + ae[Z] * bd + be[Z] * da;
 
-        alift = ae[0] * ae[0] + ae[1] * ae[1] + ae[2] * ae[2];
-        blift = be[0] * be[0] + be[1] * be[1] + be[2] * be[2];
-        clift = ce[0] * ce[0] + ce[1] * ce[1] + ce[2] * ce[2];
-        dlift = de[0] * de[0] + de[1] * de[1] + de[2] * de[2];
+        alift = ae[X] * ae[X] + ae[Y] * ae[Y] + ae[Z] * ae[Z];
+        blift = be[X] * be[X] + be[Y] * be[Y] + be[Z] * be[Z];
+        clift = ce[X] * ce[X] + ce[Y] * ce[Y] + ce[Z] * ce[Z];
+        dlift = de[X] * de[X] + de[Y] * de[Y] + de[Z] * de[Z];
 
         return (dlift * abc - clift * dab) + (blift * cda - alift * bcd);
     };
@@ -136,6 +198,63 @@ private:
 
 public:
 
+    std::array<Precision, D + 1>
+    subdeterminants(const tIndexType &pa, const tIndexType &pb, const tIndexType &pc, const tIndexType &pd) const {
+
+        Precision ab[D], ac[D], ad[D];
+        Precision blift, clift, dlift;
+
+        for (uint i = 0; i < D; ++i) {
+            ab[i] = coords[D * pb + i] - coords[D * pa + i];
+            ac[i] = coords[D * pc + i] - coords[D * pa + i];
+            ad[i] = coords[D * pd + i] - coords[D * pa + i];
+        }
+
+        blift = ab[X] * ab[X] + ab[Y] * ab[Y] + ab[Z] * ab[Z];
+        clift = ac[X] * ac[X] + ac[Y] * ac[Y] + ac[Z] * ac[Z];
+        dlift = ad[X] * ad[X] + ad[Y] * ad[Y] + ad[Z] * ad[Z];
+
+        std::array<Precision, D + 1> subdets;
+
+        subdets[0] = determinant3x3<Precision>(ab[Y], ab[Z], blift,
+                                               ac[Y], ac[Z], clift,
+                                               ad[Y], ad[Z], dlift);
+
+        subdets[1] = determinant3x3<Precision>(ab[X], ab[Z], blift,
+                                               ac[X], ac[Z], clift,
+                                               ad[X], ad[Z], dlift);
+
+        subdets[2] = determinant3x3<Precision>(ab[X], ab[Y], blift,
+                                               ac[X], ac[Y], clift,
+                                               ad[X], ad[Y], dlift);
+
+        subdets[3] = determinant3x3<Precision>(ab[X], ab[Y], ab[Z],
+                                               ac[X], ac[Y], ac[Z],
+                                               ad[X], ad[Y], ad[Z]);
+
+        return subdets;
+
+    }
+
+    Precision insphere_fast(const tIndexType &pa,
+                            __attribute__((unused)) const tIndexType &pb,
+                            __attribute__((unused)) const tIndexType &pc,
+                            __attribute__((unused)) const tIndexType &pd,
+                            const tIndexType &pe, const std::array<Precision, D + 1> &subdets) const {
+
+        Precision ae[D];
+        Precision elift;
+
+        for (uint i = 0; i < D; ++i) {
+            ae[i] = coords[D * pe + i] - coords[D * pa + i];
+        }
+
+        elift = ae[X] * ae[X] + ae[Y] * ae[Y] + ae[Z] * ae[Z];
+
+        return -ae[X] * subdets[0] + ae[Y] * subdets[1] - ae[Z] * subdets[2] + elift * subdets[3];
+
+    }
+
     Precision insphere_fast(const tIndexType &pa, const tIndexType &pb, const tIndexType &pc, const tIndexType &pd,
                             const tIndexType &pe) const {
 
@@ -144,30 +263,30 @@ public:
         Precision ab, bc, cd, da, ac, bd;
         Precision abc, bcd, cda, dab;
 
-        for (uint d = 0; d < D; ++d) {
-            ae[d] = coords[D * pa + d] - coords[D * pe + d];
-            be[d] = coords[D * pb + d] - coords[D * pe + d];
-            ce[d] = coords[D * pc + d] - coords[D * pe + d];
-            de[d] = coords[D * pd + d] - coords[D * pe + d];
+        for (uint i = 0; i < D; ++i) {
+            ae[i] = coords[D * pa + i] - coords[D * pe + i];
+            be[i] = coords[D * pb + i] - coords[D * pe + i];
+            ce[i] = coords[D * pc + i] - coords[D * pe + i];
+            de[i] = coords[D * pd + i] - coords[D * pe + i];
         }
 
-        ab = ae[0] * be[1] - be[0] * ae[1];
-        bc = be[0] * ce[1] - ce[0] * be[1];
-        cd = ce[0] * de[1] - de[0] * ce[1];
-        da = de[0] * ae[1] - ae[0] * de[1];
+        ab = ae[X] * be[Y] - be[X] * ae[Y];
+        bc = be[X] * ce[Y] - ce[X] * be[Y];
+        cd = ce[X] * de[Y] - de[X] * ce[Y];
+        da = de[X] * ae[Y] - ae[X] * de[Y];
 
-        ac = ae[0] * ce[1] - ce[0] * ae[1];
-        bd = be[0] * de[1] - de[0] * be[1];
+        ac = ae[X] * ce[Y] - ce[X] * ae[Y];
+        bd = be[X] * de[Y] - de[X] * be[Y];
 
-        abc = ae[2] * bc - be[2] * ac + ce[2] * ab;
-        bcd = be[2] * cd - ce[2] * bd + de[2] * bc;
-        cda = ce[2] * da + de[2] * ac + ae[2] * cd;
-        dab = de[2] * ab + ae[2] * bd + be[2] * da;
+        abc = ae[Z] * bc - be[Z] * ac + ce[Z] * ab;
+        bcd = be[Z] * cd - ce[Z] * bd + de[Z] * bc;
+        cda = ce[Z] * da + de[Z] * ac + ae[Z] * cd;
+        dab = de[Z] * ab + ae[Z] * bd + be[Z] * da;
 
-        alift = ae[0] * ae[0] + ae[1] * ae[1] + ae[2] * ae[2];
-        blift = be[0] * be[0] + be[1] * be[1] + be[2] * be[2];
-        clift = ce[0] * ce[0] + ce[1] * ce[1] + ce[2] * ce[2];
-        dlift = de[0] * de[0] + de[1] * de[1] + de[2] * de[2];
+        alift = ae[X] * ae[X] + ae[Y] * ae[Y] + ae[Z] * ae[Z];
+        blift = be[X] * be[X] + be[Y] * be[Y] + be[Z] * be[Z];
+        clift = ce[X] * ce[X] + ce[Y] * ce[Y] + ce[Z] * ce[Z];
+        dlift = de[X] * de[X] + de[Y] * de[Y] + de[Z] * de[Z];
 
         return (dlift * abc - clift * dab) + (blift * cda - alift * bcd);
     };

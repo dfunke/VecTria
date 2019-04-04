@@ -190,6 +190,7 @@ struct Checker<3, Precision> {
                     for (tDimType j = 0; j < D + 1; ++j) {
                         Precision det = points.insphere_fast(s.vertex(0), s.vertex(1), s.vertex(2), s.vertex(3),
                                                              sn.vertex(j));
+
                         if (det < 0) {
                             valid = false;
                         }
@@ -209,7 +210,7 @@ struct Checker<3, Precision> {
 int main() {
 
 #ifdef HAS_VTUNE
-        __itt_pause();
+    __itt_pause();
 #endif
 
     PointAoA<D, Precision> points_aoa;
@@ -227,7 +228,7 @@ int main() {
     Checker<D, Precision> checker;
 
 #ifdef HAS_VTUNE
-        __itt_resume();
+    __itt_resume();
 #endif
 
     auto t1 = std::chrono::high_resolution_clock::now();
