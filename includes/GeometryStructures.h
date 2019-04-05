@@ -19,7 +19,9 @@ public:
     Point(PointArray &pointArray, const tIndexType &idx)
             : m_pointArray(pointArray), m_idx(idx) {
 
-        m_pointArray.ensure(m_idx);
+        if constexpr (not std::is_const_v<PointArray>){
+            m_pointArray.ensure(m_idx);
+        }
     }
 
     inline const Precision &operator[](const tDimType &i) const {
@@ -27,7 +29,7 @@ public:
     }
 
     template<typename Ret = Precision &>
-    inline auto operator[](const tDimType &i) -> std::enable_if_t<not std::is_const<PointArray>::value, Ret> {
+    inline auto operator[](const tDimType &i) -> std::enable_if_t<not std::is_const_v<PointArray>, Ret> {
         return m_pointArray(m_idx, i);
     }
 };
@@ -85,7 +87,10 @@ public:
 
     Simplex(SimplexArray &simplexArray, const tIndexType &idx)
             : m_simplexArray(simplexArray), m_idx(idx) {
-        m_simplexArray.ensure(m_idx);
+        
+        if constexpr (not std::is_const_v<SimplexArray>){
+            m_simplexArray.ensure(m_idx);
+        }
     }
 
     inline const tIndexType &vertex(const tDimType &i) const {
@@ -93,7 +98,7 @@ public:
     }
 
     template<typename Ret = tIndexType &>
-    inline auto vertex(const tDimType &i) -> std::enable_if_t<not std::is_const<SimplexArray>::value, Ret> {
+    inline auto vertex(const tDimType &i) -> std::enable_if_t<not std::is_const_v<SimplexArray>, Ret> {
         return m_simplexArray.vertex(m_idx, i);
     }
 
