@@ -51,14 +51,21 @@ public:
     }
 };
 
-template<tDimType D, typename Precision, template<typename, tDimType> class MemoryLayout>
+template<class Traits>
 class PointArray {
 
 private:
+    template<typename T, tDimType D2>
+    using MemoryLayout = typename Traits::template MemoryLayout<T, D2>;
+    
+    using Precision = typename Traits::Precision;
+    static constexpr tDimType D = Traits::D;
+    
+private:
     MemoryLayout<Precision, D> coords;
 
-    using tPoint = Point<D, Precision, PointArray<D, Precision, MemoryLayout>>;
-    using tcPoint = Point<D, Precision, const PointArray<D, Precision, MemoryLayout>>;
+    using tPoint = Point<D, Precision, PointArray>;
+    using tcPoint = Point<D, Precision, const PointArray>;
 
 public:
 
@@ -142,7 +149,14 @@ template<class Traits>
 class PrecomputeSubDets {
 
 private:
-    typename Traits::template MemoryLayout<typename Traits::Precision, Traits::D + 1> subdets;
+    template<typename T, tDimType D2>
+    using MemoryLayout = typename Traits::template MemoryLayout<T, D2>;
+    
+    using Precision = typename Traits::Precision;
+    static constexpr tDimType D = Traits::D;
+    
+private:
+    MemoryLayout<Precision, D + 1> subdets;
     
 public:
     
@@ -153,9 +167,9 @@ public:
         
         for(tIndexType i = 0; i < simplices.size(); ++i){
             auto s = simplices.get(i);
-            auto subdet = subdeterminants<Traits::D, typename Traits::Precision>(s.vertex(0), s.vertex(1), s.vertex(2), s.vertex(3), points);
+            auto subdet = subdeterminants<D, Precision>(s.vertex(0), s.vertex(1), s.vertex(2), s.vertex(3), points);
             
-            for(tDimType d = 0; d < Traits::D + 1; ++d){
+            for(tDimType d = 0; d < D + 1; ++d){
                 subdets(i, d) = subdet[d];
             }
         }
@@ -166,12 +180,19 @@ template<class Traits>
 class SimplexArray : public Traits::template PrecomputeStrategy<Traits> {
 
 private:
-    typename Traits::template MemoryLayout<tIndexType, Traits::D + 1> vertices;
-    typename Traits::template MemoryLayout<tIndexType, Traits::D + 1> neighbors;
+    template<typename T, tDimType D2>
+    using MemoryLayout = typename Traits::template MemoryLayout<T, D2>;
+    
+    using Precision = typename Traits::Precision;
+    static constexpr tDimType D = Traits::D;
+    
+private:
+    MemoryLayout<tIndexType, D + 1> vertices;
+    MemoryLayout<tIndexType, D + 1> neighbors;
 
     using base = typename Traits::template PrecomputeStrategy<Traits>;
-    using tSimplex = Simplex<Traits::D, SimplexArray>;
-    using tcSimplex = Simplex<Traits::D, const SimplexArray>;
+    using tSimplex = Simplex<D, SimplexArray>;
+    using tcSimplex = Simplex<D, const SimplexArray>;
 
 public:
 

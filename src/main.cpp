@@ -213,10 +213,10 @@ int main() {
     __itt_pause();
 #endif
 
-    PointArray<D, Precision, MemoryLayoutAoA> points_aoa;
+    PointArray<Traits<D, Precision, MemoryLayoutAoA, NoPrecomputation>> points_aoa;
     generatePoints<D, Precision>(points_aoa, N);
 
-    PointArray<D, Precision, MemoryLayoutPA> points_pa;
+    PointArray<Traits<D, Precision, MemoryLayoutPA, NoPrecomputation>> points_pa;
     generatePoints<D, Precision>(points_pa, N);
 
     Triangulator<D> triangulator;
