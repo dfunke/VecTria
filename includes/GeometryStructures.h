@@ -54,7 +54,7 @@ public:
 template<class Traits>
 class PointArray {
 
-private:
+public:
     template<typename T, tDimType D2>
     using MemoryLayout = typename Traits::template MemoryLayout<T, D2>;
     
@@ -141,6 +141,9 @@ template<class Traits>
 class NoPrecomputation {
     
 public:
+    
+    static constexpr bool hasSubdets = false;
+    
     template<class SimplexArray, class PointArray>
     void precompute(const SimplexArray &simplices, const PointArray &points){ }
 };
@@ -148,7 +151,7 @@ public:
 template<class Traits>
 class PrecomputeSubDets {
 
-private:
+public:
     template<typename T, tDimType D2>
     using MemoryLayout = typename Traits::template MemoryLayout<T, D2>;
     
@@ -156,30 +159,42 @@ private:
     static constexpr tDimType D = Traits::D;
     
 private:
-    MemoryLayout<Precision, D + 1> subdets;
+    MemoryLayout<Precision, D + 1> f_subdets;
     
 public:
+    
+    static constexpr bool hasSubdets = true;
     
     template<class SimplexArray, class PointArray>
     void precompute(const SimplexArray &simplices, const PointArray &points){
         
-        subdets.ensure(simplices.size() - 1);
+        f_subdets.ensure(simplices.size() - 1);
         
         for(tIndexType i = 0; i < simplices.size(); ++i){
             auto s = simplices.get(i);
             auto subdet = subdeterminants<D, Precision>(s.vertex(0), s.vertex(1), s.vertex(2), s.vertex(3), points);
             
             for(tDimType d = 0; d < D + 1; ++d){
-                subdets(i, d) = subdet[d];
+                f_subdets(i, d) = subdet[d];
             }
         }
+    }
+    
+    auto subdets(const tIndexType &i) const {
+        std::array<Precision, D + 1> subdets;
+        
+        for(tDimType d = 0; d < D + 1; ++d){
+            subdets[d] = f_subdets(i, d);
+        }
+        
+        return subdets;
     }
 };
 
 template<class Traits>
 class SimplexArray : public Traits::template PrecomputeStrategy<Traits> {
 
-private:
+public:
     template<typename T, tDimType D2>
     using MemoryLayout = typename Traits::template MemoryLayout<T, D2>;
     

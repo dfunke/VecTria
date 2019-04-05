@@ -110,3 +110,17 @@ Precision insphere_fast(const tIndexType &pa, const tIndexType &pb, const tIndex
 
     return (dlift * abc - clift * dab) + (blift * cda - alift * bcd);
 }
+
+template<tDimType D, typename Precision, class PointArray, class SimplexArray>
+Precision insphere_fast(const tIndexType &pa, const tIndexType &pb, const tIndexType &pc, const tIndexType &pd,
+                                                  const tIndexType &pe, const tIndexType &s, const PointArray &points, const
+                                         SimplexArray &simplices) {
+    
+    if constexpr (SimplexArray::hasSubdets){
+        return insphere_fast<D, Precision>(pa, pb, pc, pd, pe, simplices.subdets(s), points);
+    } else {
+        return insphere_fast<D, Precision>(pa, pb, pc, pd, pe, points);
+    }
+    
+}
+

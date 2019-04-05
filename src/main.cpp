@@ -188,8 +188,9 @@ struct Checker<3, Precision> {
                     auto sn = simplices.get(n);
 
                     for (tDimType j = 0; j < D + 1; ++j) {
-                        Precision det = insphere_fast<D, Precision>(s.vertex(0), s.vertex(1), s.vertex(2), s.vertex(3),
-                                                                    sn.vertex(j), points);
+                        Precision det =
+                        insphere_fast<D, Precision>(s.vertex(0), s.vertex(1), s.vertex(2), s.vertex(3),
+                                                                    sn.vertex(j), i, points, simplices);
 
                         if (det < 0) {
                             valid = false;
@@ -202,6 +203,26 @@ struct Checker<3, Precision> {
         return valid;
     }
 };
+
+template<class SimplexArray, class PointArray>
+void timeFunction(SimplexArray &simplices, const PointArray & points){
+    Checker<SimplexArray::D, typename SimplexArray::Precision> checker;
+    
+    auto t1 = std::chrono::high_resolution_clock::now();
+    simplices.precompute(points);
+    auto t2 = std::chrono::high_resolution_clock::now();
+    
+    auto t3 = std::chrono::high_resolution_clock::now();
+    bool valid = checker.check(simplices, points);
+    auto t4 = std::chrono::high_resolution_clock::now();
+    
+    std::cout << "Layout: " << "tbd"
+    << " valid: " << valid
+    << " Precomp: " << (SimplexArray::hasSubdets ? std::to_string(std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count()) : "no")
+    << " Check: " << std::chrono::duration_cast<std::chrono::duration<double>>(t4 - t3).count()
+    << std::endl;
+    
+}
 
 #define D 3
 #define Precision double
@@ -227,47 +248,16 @@ int main() {
     auto simplices_aoa_wp = triangulator.triangulate<SimplexArray<Traits<D, Precision, MemoryLayoutAoA, PrecomputeSubDets>>>(points_aoa);
     auto simplices_pa_wp = triangulator.triangulate<SimplexArray<Traits<D, Precision, MemoryLayoutPA, PrecomputeSubDets>>>(points_pa);
     
-    bool valid;
-    Checker<D, Precision> checker;
-
 #ifdef HAS_VTUNE
     __itt_resume();
 #endif
 
-    auto t1 = std::chrono::high_resolution_clock::now();
-    simplices_aoa_np.precompute(points_aoa);
-    valid = checker.check(simplices_aoa_np, points_aoa);
-    auto t2 = std::chrono::high_resolution_clock::now();
+    timeFunction(simplices_aoa_np, points_aoa);
+    timeFunction(simplices_pa_np, points_pa);
+    
+    timeFunction(simplices_aoa_wp, points_aoa);
+    timeFunction(simplices_pa_wp, points_pa);
 
-    std::cout << "AoA, no precomp valid: " << valid << " time "
-              << std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count() << std::endl;
-    
-    t1 = std::chrono::high_resolution_clock::now();
-    simplices_pa_np.precompute(points_pa);
-    valid = checker.check(simplices_pa_np, points_pa);
-    t2 = std::chrono::high_resolution_clock::now();
-
-    std::cout << "PA, no precomp valid: " << valid << " time "
-              << std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count() << std::endl;
-    
-    t1 = std::chrono::high_resolution_clock::now();
-    simplices_aoa_wp.precompute(points_aoa);
-    valid = checker.check(simplices_aoa_wp, points_aoa);
-    t2 = std::chrono::high_resolution_clock::now();
-    
-    std::cout << "AoA, with precomp valid: " << valid << " time "
-    << std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count() << std::endl;
-    
-    t1 = std::chrono::high_resolution_clock::now();
-    simplices_pa_wp.precompute(points_pa);
-    valid = checker.check(simplices_pa_wp, points_pa);
-    t2 = std::chrono::high_resolution_clock::now();
-    
-    std::cout << "PA, with precomp valid: " << valid << " time "
-    << std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count() << std::endl;
-    
-    
-    
     return 0;
 
 }
