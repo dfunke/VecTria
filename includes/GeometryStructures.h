@@ -143,8 +143,11 @@ public:
 };
 
 template<tDimType D, typename Precision, template<typename, tDimType> class MemoryLayout, template<class> class PrecomputeStrategy>
-class SimplexArray {
+class SimplexArray : public PrecomputeStrategy<SimplexArray<D, Precision, MemoryLayout, PrecomputeStrategy>> {
 
+private:
+    using base = PrecomputeStrategy<SimplexArray<D, Precision, MemoryLayout, PrecomputeStrategy>>;
+    
 public:
     template<typename T, tDimType D2>
     using tMemoryLayout = MemoryLayout<T, D2>;
@@ -155,8 +158,6 @@ public:
 private:
     MemoryLayout<tIndexType, D + 1> vertices;
     MemoryLayout<tIndexType, D + 1> neighbors;
-    
-    PrecomputeStrategy<SimplexArray> precomputeStrategy;
 
     using tSimplex = Simplex<D, SimplexArray>;
     using tcSimplex = Simplex<D, const SimplexArray>;
@@ -203,6 +204,6 @@ public:
     
     template<class PointArray>
     void precompute(const PointArray &points) {
-        precomputeStrategy.precompute(*this, points);
+        base::precompute(*this, points);
     }
 };
