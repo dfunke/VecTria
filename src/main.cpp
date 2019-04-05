@@ -221,11 +221,11 @@ int main() {
 
     Triangulator<D> triangulator;
 
-    auto simplices_aoa = triangulator.triangulate<SimplexArray<D, Precision, MemoryLayoutAoA, NoPrecomputation>>(points_aoa);
-    auto simplices_pa = triangulator.triangulate<SimplexArray<D, Precision, MemoryLayoutPA, NoPrecomputation>>(points_pa);
+    auto simplices_aoa_np = triangulator.triangulate<SimplexArray<D, Precision, MemoryLayoutAoA, NoPrecomputation>>(points_aoa);
+    auto simplices_pa_np = triangulator.triangulate<SimplexArray<D, Precision, MemoryLayoutPA, NoPrecomputation>>(points_pa);
     
-    simplices_aoa.precompute(points_aoa);
-    simplices_pa.precompute(points_pa);
+    auto simplices_aoa_wp = triangulator.triangulate<SimplexArray<D, Precision, MemoryLayoutAoA, PrecomputeSubDets>>(points_aoa);
+    auto simplices_pa_wp = triangulator.triangulate<SimplexArray<D, Precision, MemoryLayoutPA, PrecomputeSubDets>>(points_pa);
     
     bool valid;
     Checker<D, Precision> checker;
@@ -235,33 +235,39 @@ int main() {
 #endif
 
     auto t1 = std::chrono::high_resolution_clock::now();
-    valid = checker.check(simplices_aoa, points_aoa);
+    simplices_aoa_np.precompute(points_aoa);
+    valid = checker.check(simplices_aoa_np, points_aoa);
     auto t2 = std::chrono::high_resolution_clock::now();
 
-    std::cout << "sAOA/pAOA valid: " << valid << " time "
+    std::cout << "AoA, no precomp valid: " << valid << " time "
               << std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count() << std::endl;
-
+    
     t1 = std::chrono::high_resolution_clock::now();
-    valid = checker.check(simplices_aoa, points_pa);
+    simplices_pa_np.precompute(points_pa);
+    valid = checker.check(simplices_pa_np, points_pa);
     t2 = std::chrono::high_resolution_clock::now();
 
-    std::cout << "sAOA/pPA valid: " << valid << " time "
+    std::cout << "PA, no precomp valid: " << valid << " time "
               << std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count() << std::endl;
-
+    
     t1 = std::chrono::high_resolution_clock::now();
-    valid = checker.check(simplices_pa, points_aoa);
+    simplices_aoa_wp.precompute(points_aoa);
+    valid = checker.check(simplices_aoa_wp, points_aoa);
     t2 = std::chrono::high_resolution_clock::now();
-
-    std::cout << "sPA/pAOA valid: " << valid << " time "
-              << std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count() << std::endl;
-
+    
+    std::cout << "AoA, with precomp valid: " << valid << " time "
+    << std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count() << std::endl;
+    
     t1 = std::chrono::high_resolution_clock::now();
-    valid = checker.check(simplices_pa, points_pa);
+    simplices_pa_wp.precompute(points_pa);
+    valid = checker.check(simplices_pa_wp, points_pa);
     t2 = std::chrono::high_resolution_clock::now();
-
-    std::cout << "sPA/pPA valid: " << valid << " time "
-              << std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count() << std::endl;
-
+    
+    std::cout << "PA, with precomp valid: " << valid << " time "
+    << std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count() << std::endl;
+    
+    
+    
     return 0;
 
 }

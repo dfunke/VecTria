@@ -125,15 +125,18 @@ template<class SimplexArray>
 class PrecomputeSubDets {
 
 private:
-    typename SimplexArray::template tMemoryLayout<SimplexArray::tPrecision, SimplexArray::cD + 1> subdets;
+    typename SimplexArray::template tMemoryLayout<typename SimplexArray::tPrecision, SimplexArray::cD + 1> subdets;
     
 public:
     
     template<class PointArray>
     void precompute(const SimplexArray &simplices, const PointArray &points){
+        
+        subdets.ensure(simplices.size() - 1);
+        
         for(tIndexType i = 0; i < simplices.size(); ++i){
             auto s = simplices.get(i);
-            auto subdet = subdeterminants(s.vertices(0), s.vertices(1), s.vertices(2), s.vertices(3), points);
+            auto subdet = subdeterminants<SimplexArray::cD, typename SimplexArray::tPrecision>(s.vertex(0), s.vertex(1), s.vertex(2), s.vertex(3), points);
             
             for(tDimType d = 0; d < SimplexArray::cD + 1; ++d){
                 subdets(i, d) = subdet[d];
@@ -143,7 +146,7 @@ public:
 };
 
 template<tDimType D, typename Precision, template<typename, tDimType> class MemoryLayout, template<class> class PrecomputeStrategy>
-class SimplexArray : public PrecomputeStrategy<SimplexArray<D, Precision, MemoryLayout, PrecomputeStrategy>> {
+class SimplexArray {
 
 private:
     using base = PrecomputeStrategy<SimplexArray<D, Precision, MemoryLayout, PrecomputeStrategy>>;
@@ -158,6 +161,8 @@ public:
 private:
     MemoryLayout<tIndexType, D + 1> vertices;
     MemoryLayout<tIndexType, D + 1> neighbors;
+    
+    PrecomputeStrategy<SimplexArray> precomputeStrategy;
 
     using tSimplex = Simplex<D, SimplexArray>;
     using tcSimplex = Simplex<D, const SimplexArray>;
@@ -204,6 +209,6 @@ public:
     
     template<class PointArray>
     void precompute(const PointArray &points) {
-        base::precompute(*this, points);
+        precomputeStrategy.precompute(*this, points);
     }
 };
