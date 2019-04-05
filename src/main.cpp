@@ -221,9 +221,12 @@ int main() {
 
     Triangulator<D> triangulator;
 
-    auto simplices_aoa = triangulator.triangulate<SimplexArray<D, Precision, MemoryLayoutAoA>>(points_aoa);
-    auto simplices_pa = triangulator.triangulate<SimplexArray<D, Precision, MemoryLayoutPA>>(points_pa);
-
+    auto simplices_aoa = triangulator.triangulate<SimplexArray<D, Precision, MemoryLayoutAoA, NoPrecomputation>>(points_aoa);
+    auto simplices_pa = triangulator.triangulate<SimplexArray<D, Precision, MemoryLayoutPA, NoPrecomputation>>(points_pa);
+    
+    simplices_aoa.precompute(points_aoa);
+    simplices_pa.precompute(points_pa);
+    
     bool valid;
     Checker<D, Precision> checker;
 

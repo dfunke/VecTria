@@ -107,21 +107,59 @@ public:
     }
 
     template<typename Ret = tIndexType &>
-    inline auto neighbor(const tDimType &i) -> std::enable_if_t<not std::is_const<SimplexArray>::value, Ret> {
+    inline auto neighbor(const tDimType &i) -> std::enable_if_t<not std::is_const_v<SimplexArray>, Ret> {
         return m_simplexArray.neighbor(m_idx, i);
     }
 
 };
 
-template<tDimType D, typename Precision, template<typename, tDimType> class MemoryLayout>
+template<class SimplexArray>
+class NoPrecomputation {
+    
+public:
+    template<class PointArray>
+    void precompute(const SimplexArray &simplices, const PointArray &points){ }
+};
+
+template<class SimplexArray>
+class PrecomputeSubDets {
+
+private:
+    typename SimplexArray::template tMemoryLayout<SimplexArray::tPrecision, SimplexArray::cD + 1> subdets;
+    
+public:
+    
+    template<class PointArray>
+    void precompute(const SimplexArray &simplices, const PointArray &points){
+        for(tIndexType i = 0; i < simplices.size(); ++i){
+            auto s = simplices.get(i);
+            auto subdet = subdeterminants(s.vertices(0), s.vertices(1), s.vertices(2), s.vertices(3), points);
+            
+            for(tDimType d = 0; d < SimplexArray::cD + 1; ++d){
+                subdets(i, d) = subdet[d];
+            }
+        }
+    }
+};
+
+template<tDimType D, typename Precision, template<typename, tDimType> class MemoryLayout, template<class> class PrecomputeStrategy>
 class SimplexArray {
 
+public:
+    template<typename T, tDimType D2>
+    using tMemoryLayout = MemoryLayout<T, D2>;
+    
+    using tPrecision = Precision;
+    static constexpr tDimType cD = D;
+    
 private:
     MemoryLayout<tIndexType, D + 1> vertices;
     MemoryLayout<tIndexType, D + 1> neighbors;
+    
+    PrecomputeStrategy<SimplexArray> precomputeStrategy;
 
-    using tSimplex = Simplex<D, SimplexArray<D, Precision, MemoryLayout>>;
-    using tcSimplex = Simplex<D, const SimplexArray<D, Precision, MemoryLayout>>;
+    using tSimplex = Simplex<D, SimplexArray>;
+    using tcSimplex = Simplex<D, const SimplexArray>;
 
 public:
 
@@ -161,5 +199,10 @@ public:
 
     tcSimplex get(const tIndexType &i) const {
         return tcSimplex(*this, i);
+    }
+    
+    template<class PointArray>
+    void precompute(const PointArray &points) {
+        precomputeStrategy.precompute(*this, points);
     }
 };
