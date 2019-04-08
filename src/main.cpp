@@ -189,8 +189,8 @@ struct Checker<3, Precision> {
 
                     for (tDimType j = 0; j < D + 1; ++j) {
                         Precision det =
-                        insphere_fast<D, Precision>(s.vertex(0), s.vertex(1), s.vertex(2), s.vertex(3),
-                                                                    sn.vertex(j), i, points, simplices);
+                                insphere_fast<D, Precision>(s.vertex(0), s.vertex(1), s.vertex(2), s.vertex(3),
+                                                            sn.vertex(j), i, points, simplices);
 
                         if (det < 0) {
                             valid = false;
@@ -205,23 +205,24 @@ struct Checker<3, Precision> {
 };
 
 template<class SimplexArray, class PointArray>
-void timeFunction(SimplexArray &simplices, const PointArray & points){
+void timeFunction(SimplexArray &simplices, const PointArray &points) {
     Checker<SimplexArray::D, typename SimplexArray::Precision> checker;
-    
+
     auto t1 = std::chrono::high_resolution_clock::now();
     simplices.precompute(points);
     auto t2 = std::chrono::high_resolution_clock::now();
-    
+
     auto t3 = std::chrono::high_resolution_clock::now();
     bool valid = checker.check(simplices, points);
     auto t4 = std::chrono::high_resolution_clock::now();
-    
+
     std::cout << "Layout: " << "tbd"
-    << " valid: " << valid
-    << " Precomp: " << (SimplexArray::hasSubdets ? std::to_string(std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count()) : "no")
-    << " Check: " << std::chrono::duration_cast<std::chrono::duration<double>>(t4 - t3).count()
-    << std::endl;
-    
+              << " valid: " << valid
+              << " Precomp: " << (SimplexArray::hasSubdets ? std::to_string(
+            std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count()) : "no")
+              << " Check: " << std::chrono::duration_cast<std::chrono::duration<double>>(t4 - t3).count()
+              << std::endl;
+
 }
 
 #define D 3
@@ -242,19 +243,23 @@ int main() {
 
     Triangulator<D> triangulator;
 
-    auto simplices_aoa_np = triangulator.triangulate<SimplexArray<Traits<D, Precision, MemoryLayoutAoA, NoPrecomputation>>>(points_aoa);
-    auto simplices_pa_np = triangulator.triangulate<SimplexArray<Traits<D, Precision, MemoryLayoutPA, NoPrecomputation>>>(points_pa);
-    
-    auto simplices_aoa_wp = triangulator.triangulate<SimplexArray<Traits<D, Precision, MemoryLayoutAoA, PrecomputeSubDets>>>(points_aoa);
-    auto simplices_pa_wp = triangulator.triangulate<SimplexArray<Traits<D, Precision, MemoryLayoutPA, PrecomputeSubDets>>>(points_pa);
-    
+    auto simplices_aoa_np = triangulator.triangulate<SimplexArray<Traits<D, Precision, MemoryLayoutAoA, NoPrecomputation>>>(
+            points_aoa);
+    auto simplices_pa_np = triangulator.triangulate<SimplexArray<Traits<D, Precision, MemoryLayoutPA, NoPrecomputation>>>(
+            points_pa);
+
+    auto simplices_aoa_wp = triangulator.triangulate<SimplexArray<Traits<D, Precision, MemoryLayoutAoA, PrecomputeSubDets>>>(
+            points_aoa);
+    auto simplices_pa_wp = triangulator.triangulate<SimplexArray<Traits<D, Precision, MemoryLayoutPA, PrecomputeSubDets>>>(
+            points_pa);
+
 #ifdef HAS_VTUNE
     __itt_resume();
 #endif
 
     timeFunction(simplices_aoa_np, points_aoa);
     timeFunction(simplices_pa_np, points_pa);
-    
+
     timeFunction(simplices_aoa_wp, points_aoa);
     timeFunction(simplices_pa_wp, points_pa);
 

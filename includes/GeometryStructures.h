@@ -7,19 +7,19 @@
 #include "MathTools.h"
 
 template<tDimType pD,
-         typename pPrecision,
-         template<typename, tDimType> class pMemoryLayout,
-         template<class> class pPrecomputeStrategy>
+        typename pPrecision,
+        template<typename, tDimType> class pMemoryLayout,
+        template<class> class pPrecomputeStrategy>
 struct Traits {
-    
+
     template<typename T, tDimType D2>
     using MemoryLayout = pMemoryLayout<T, D2>;
-    
+
     template<class T>
     using PrecomputeStrategy = pPrecomputeStrategy<Traits>;
-    
+
     using Precision = pPrecision;
-    
+
     static constexpr tDimType D = pD;
 };
 
@@ -36,7 +36,7 @@ public:
     Point(PointArray &pointArray, const tIndexType &idx)
             : m_pointArray(pointArray), m_idx(idx) {
 
-        if constexpr (not std::is_const_v<PointArray>){
+        if constexpr (not std::is_const_v<PointArray>) {
             m_pointArray.ensure(m_idx);
         }
     }
@@ -57,10 +57,10 @@ class PointArray {
 public:
     template<typename T, tDimType D2>
     using MemoryLayout = typename Traits::template MemoryLayout<T, D2>;
-    
+
     using Precision = typename Traits::Precision;
     static constexpr tDimType D = Traits::D;
-    
+
 private:
     MemoryLayout<Precision, D> coords;
 
@@ -111,8 +111,8 @@ public:
 
     Simplex(SimplexArray &simplexArray, const tIndexType &idx)
             : m_simplexArray(simplexArray), m_idx(idx) {
-        
-        if constexpr (not std::is_const_v<SimplexArray>){
+
+        if constexpr (not std::is_const_v<SimplexArray>) {
             m_simplexArray.ensure(m_idx);
         }
     }
@@ -139,13 +139,14 @@ public:
 
 template<class Traits>
 class NoPrecomputation {
-    
+
 public:
-    
+
     static constexpr bool hasSubdets = false;
-    
+
     template<class SimplexArray, class PointArray>
-    void precompute(const SimplexArray &simplices, const PointArray &points){ }
+    void precompute(__attribute__((unused)) const SimplexArray &simplices,
+                    __attribute__((unused)) const PointArray &points) {}
 };
 
 template<class Traits>
@@ -154,39 +155,39 @@ class PrecomputeSubDets {
 public:
     template<typename T, tDimType D2>
     using MemoryLayout = typename Traits::template MemoryLayout<T, D2>;
-    
+
     using Precision = typename Traits::Precision;
     static constexpr tDimType D = Traits::D;
-    
+
 private:
     MemoryLayout<Precision, D + 1> f_subdets;
-    
+
 public:
-    
+
     static constexpr bool hasSubdets = true;
-    
+
     template<class SimplexArray, class PointArray>
-    void precompute(const SimplexArray &simplices, const PointArray &points){
-        
+    void precompute(const SimplexArray &simplices, const PointArray &points) {
+
         f_subdets.ensure(simplices.size() - 1);
-        
-        for(tIndexType i = 0; i < simplices.size(); ++i){
+
+        for (tIndexType i = 0; i < simplices.size(); ++i) {
             auto s = simplices.get(i);
             auto subdet = subdeterminants<D, Precision>(s.vertex(0), s.vertex(1), s.vertex(2), s.vertex(3), points);
-            
-            for(tDimType d = 0; d < D + 1; ++d){
+
+            for (tDimType d = 0; d < D + 1; ++d) {
                 f_subdets(i, d) = subdet[d];
             }
         }
     }
-    
+
     auto subdets(const tIndexType &i) const {
         std::array<Precision, D + 1> subdets;
-        
-        for(tDimType d = 0; d < D + 1; ++d){
+
+        for (tDimType d = 0; d < D + 1; ++d) {
             subdets[d] = f_subdets(i, d);
         }
-        
+
         return subdets;
     }
 };
@@ -197,10 +198,10 @@ class SimplexArray : public Traits::template PrecomputeStrategy<Traits> {
 public:
     template<typename T, tDimType D2>
     using MemoryLayout = typename Traits::template MemoryLayout<T, D2>;
-    
+
     using Precision = typename Traits::Precision;
     static constexpr tDimType D = Traits::D;
-    
+
 private:
     MemoryLayout<tIndexType, D + 1> vertices;
     MemoryLayout<tIndexType, D + 1> neighbors;
@@ -248,7 +249,7 @@ public:
     tcSimplex get(const tIndexType &i) const {
         return tcSimplex(*this, i);
     }
-    
+
     template<class PointArray>
     void precompute(const PointArray &points) {
         base::precompute(*this, points);
