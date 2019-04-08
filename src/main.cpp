@@ -188,9 +188,7 @@ struct Checker<3, Precision> {
                     auto sn = simplices.get(n);
 
                     for (tDimType j = 0; j < D + 1; ++j) {
-                        Precision det =
-                                insphere_fast<D, Precision>(s.vertex(0), s.vertex(1), s.vertex(2), s.vertex(3),
-                                                            sn.vertex(j), i, points, simplices);
+                        Precision det = insphere_fast<D, Precision>(i, sn.vertex(j), simplices, points);
 
                         if (det < 0) {
                             valid = false;
