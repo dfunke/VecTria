@@ -216,7 +216,7 @@ void timeFunction(SimplexArray &simplices, const PointArray &points) {
     bool valid = checker.check(simplices, points);
     auto t4 = std::chrono::high_resolution_clock::now();
 
-    std::cout << "Layout: " << "tbd"
+    std::cout << "Layout: " << SimplexArray::template MemoryLayout<typename SimplexArray::Precision, SimplexArray::D>::name()
               << " valid: " << valid
               << " Precomp: " << (SimplexArray::hasSubdets ? std::to_string(
             std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count()) : "no")

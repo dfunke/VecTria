@@ -48,6 +48,10 @@ public:
         }
     }
 
+    static std::string name() {
+        return "PA";
+    }
+
 };
 
 template<typename T, tDimType D>
@@ -84,6 +88,10 @@ public:
                         "index " + std::to_string(i) + " is out of range " + std::to_string(size()));
             }
         }
+    }
+
+    static std::string name() {
+        return "AoA";
     }
 
 };
