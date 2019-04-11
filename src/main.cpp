@@ -209,16 +209,18 @@ void timeFunction(SimplexArray &simplices, const PointArray &points) {
     auto t1 = std::chrono::high_resolution_clock::now();
     simplices.precompute(points);
     auto t2 = std::chrono::high_resolution_clock::now();
+    auto tPrep = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count();
 
     auto t3 = std::chrono::high_resolution_clock::now();
     bool valid = checker.check(simplices, points);
     auto t4 = std::chrono::high_resolution_clock::now();
+    auto tCheck = std::chrono::duration_cast<std::chrono::duration<double>>(t4 - t3).count();
 
     std::cout << "Layout: " << SimplexArray::template MemoryLayout<typename SimplexArray::Precision, SimplexArray::D>::name()
               << " valid: " << valid
-              << " Precomp: " << (SimplexArray::hasSubdets ? std::to_string(
-            std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count()) : "no")
-              << " Check: " << std::chrono::duration_cast<std::chrono::duration<double>>(t4 - t3).count()
+              << " Precomp: " << (SimplexArray::hasSubdets ? std::to_string(tPrep) : "no")
+              << " Check: " << tCheck
+              << " Total: " << ((SimplexArray::hasSubdets ? tPrep : 0)) + tCheck
               << std::endl;
 
 }
