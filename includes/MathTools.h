@@ -2,6 +2,12 @@
 
 #include <array>
 
+#ifdef HAS_Vc
+
+#include <Vc/Vc>
+
+#endif
+
 #include "Datastructures.h"
 
 template<typename Precision>
@@ -12,6 +18,20 @@ inline Precision determinant3x3(const Precision a00, const Precision a01, const 
             a01 * (a10 * a22 - a12 * a20) +
             a02 * (a10 * a21 - a11 * a20));
 }
+
+#ifdef HAS_Vc
+
+template<typename Precision>
+inline Vc::Vector<Precision>
+determinant3x3(const Vc::Vector<Precision> &a00, const Vc::Vector<Precision> &a01, const Vc::Vector<Precision> &a02,
+               const Vc::Vector<Precision> &a10, const Vc::Vector<Precision> &a11, const Vc::Vector<Precision> &a12,
+               const Vc::Vector<Precision> &a20, const Vc::Vector<Precision> &a21, const Vc::Vector<Precision> &a22) {
+    return (a00 * (a11 * a22 - a12 * a21) -
+            a01 * (a10 * a22 - a12 * a20) +
+            a02 * (a10 * a21 - a11 * a20));
+}
+
+#endif
 
 template<tDimType D, typename Precision, class SimplexArray, class PointArray>
 void subdeterminants(const tIndexType &s, SimplexArray &simplices, const PointArray &points) {
@@ -49,6 +69,47 @@ void subdeterminants(const tIndexType &s, SimplexArray &simplices, const PointAr
     }
 
 }
+
+#ifdef HAS_Vc
+
+template<tDimType D, typename Precision, class SimplexArray, class PointArray>
+void subdeterminants(const Vc::Vector<tIndexType> &s, SimplexArray &simplices, const PointArray &points) {
+
+    if constexpr (SimplexArray::hasSubdets) {
+        Vc::Vector<Precision> ab[D], ac[D], ad[D];
+        Vc::Vector<Precision> blift, clift, dlift;
+
+        for (uint i = 0; i < D; ++i) {
+            ab[i] = points(simplices.vertex(s, 1), i) - points(simplices.vertex(s, 0), i);
+            ac[i] = points(simplices.vertex(s, 2), i) - points(simplices.vertex(s, 0), i);
+            ad[i] = points(simplices.vertex(s, 3), i) - points(simplices.vertex(s, 0), i);
+        }
+
+        blift = ab[X] * ab[X] + ab[Y] * ab[Y] + ab[Z] * ab[Z];
+        clift = ac[X] * ac[X] + ac[Y] * ac[Y] + ac[Z] * ac[Z];
+        dlift = ad[X] * ad[X] + ad[Y] * ad[Y] + ad[Z] * ad[Z];
+
+        simplices.subdets(s, 0) = determinant3x3<Precision>(ab[Y], ab[Z], blift,
+                                                            ac[Y], ac[Z], clift,
+                                                            ad[Y], ad[Z], dlift);
+
+        simplices.subdets(s, 1) = determinant3x3<Precision>(ab[X], ab[Z], blift,
+                                                            ac[X], ac[Z], clift,
+                                                            ad[X], ad[Z], dlift);
+
+        simplices.subdets(s, 2) = determinant3x3<Precision>(ab[X], ab[Y], blift,
+                                                            ac[X], ac[Y], clift,
+                                                            ad[X], ad[Y], dlift);
+
+        simplices.subdets(s, 3) = determinant3x3<Precision>(ab[X], ab[Y], ab[Z],
+                                                            ac[X], ac[Y], ac[Z],
+                                                            ad[X], ad[Y], ad[Z]);
+
+    }
+
+}
+
+#endif
 
 template<tDimType D, typename Precision, class SimplexArray, class PointArray>
 Precision

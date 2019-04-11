@@ -77,6 +77,14 @@ public:
         return coords(i, d);
     }
 
+#ifdef HAS_Vc
+
+    inline Vc::Vector<Precision> operator()(const Vc::Vector<tIndexType> &i, const tDimType &d) const {
+        return coords(i, d);
+    }
+
+#endif
+
     void ensure(const tIndexType &i) {
         coords.ensure(i);
     }
@@ -171,10 +179,19 @@ public:
 
         f_subdets.ensure(simplices.size() - 1);
 
+#ifdef HAS_Vc
+        for (auto i = Vc::Vector<tIndexType>::IndexesFromZero(); i.max() < simplices.size();
+             i += Vc::Vector<tIndexType>(Vc::Vector<tIndexType>::size())) {
+
+            subdeterminants<D, Precision>(i, simplices, points);
+
+        }
+#else
         for (tIndexType i = 0; i < simplices.size(); ++i) {
             subdeterminants<D, Precision>(i, simplices, points);
 
         }
+#endif
     }
 
     inline const Precision &subdets(const tIndexType &i, const tDimType &d) const {
@@ -184,6 +201,14 @@ public:
     inline Precision &subdets(const tIndexType &i, const tDimType &d) {
         return f_subdets(i, d);
     }
+
+#ifdef HAS_Vc
+
+    inline Vc::Vector<Precision> subdets(const Vc::Vector<tIndexType> &i, const tDimType &d) const {
+        return f_subdets(i, d);
+    }
+
+#endif
 };
 
 template<class Traits>
@@ -214,6 +239,14 @@ public:
         return vertices(i, d);
     }
 
+#ifdef HAS_Vc
+
+    inline Vc::Vector<tIndexType> vertex(const Vc::Vector<tIndexType> &i, const tDimType &d) const {
+        return vertices(i, d);
+    }
+
+#endif
+
     inline const tIndexType &neighbor(const tIndexType &i, const tDimType &d) const {
         return neighbors(i, d);
     }
@@ -221,6 +254,14 @@ public:
     inline tIndexType &neighbor(const tIndexType &i, const tDimType &d) {
         return neighbors(i, d);
     }
+
+#ifdef HAS_Vc
+
+    inline Vc::Vector<tIndexType> neighbor(const Vc::Vector<tIndexType> &i, const tDimType &d) const {
+        return neighbor(i, d);
+    }
+
+#endif
 
     void ensure(const tIndexType &i) {
         vertices.ensure(i);

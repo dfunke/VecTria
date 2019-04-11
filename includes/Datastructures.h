@@ -3,7 +3,13 @@
 #include <vector>
 #include <array>
 
-using tIndexType = unsigned long;
+#ifdef HAS_Vc
+
+#include <Vc/Vc>
+
+#endif
+
+using tIndexType = unsigned int;
 constexpr tIndexType INF = ~tIndexType(0);
 
 using tDimType = unsigned short;
@@ -30,6 +36,14 @@ public:
     inline T &operator()(const tIndexType &i, const tDimType &d) {
         return base::operator[](D * i + d);
     }
+
+#ifdef HAS_Vc
+
+    inline Vc::Vector<T> operator()(const Vc::Vector<tIndexType> &i, const tDimType &d) const {
+        return Vc::Vector<T>(base::data(), Vc::Vector<tIndexType>(D) * i + Vc::Vector<tIndexType>(d));
+    }
+
+#endif
 
     inline auto size() const {
         return base::size() / D;
@@ -69,6 +83,14 @@ public:
         return base::operator[](d)[i];
     }
 
+#ifdef HAS_Vc
+
+    inline Vc::Vector<T> operator()(const Vc::Vector<tIndexType> &i, const tDimType &d) const {
+        return Vc::Vector<T>(base::operator[](d).data(), i);
+    }
+
+#endif
+
     inline auto size() const {
         return base::operator[](0).size();
     }
@@ -95,3 +117,4 @@ public:
     }
 
 };
+
