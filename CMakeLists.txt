@@ -43,5 +43,15 @@ if(VTUNE_FOUND)
     add_definitions(-DHAS_VTUNE)
 endif()
 
+find_package(Vc)
+if(Vc_FOUND)
+    include_directories(
+            SYSTEM
+            ${Vc_INCLUDE_DIRS}
+    )
+    add_definitions(-DHAS_Vc)
+endif()
+
+
 # add all sources
 add_subdirectory(src)

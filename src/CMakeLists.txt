@@ -7,3 +7,8 @@ if(VTUNE_FOUND)
     target_link_libraries(main
             ${VTUNE_LIBRARIES})
 endif()
+
+if(Vc_FOUND)
+    target_link_libraries(main
+            ${Vc_LIBRARIES})
+endif()
