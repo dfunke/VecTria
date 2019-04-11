@@ -227,7 +227,12 @@ void timeFunction(SimplexArray &simplices, const PointArray &points) {
 
 #define D 3
 #define Precision double
+
+#ifdef NDEBUG
 #define N 1e6
+#else
+#define N 1e4
+#endif
 
 int main() {
 
