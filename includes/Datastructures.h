@@ -43,6 +43,10 @@ public:
         return Vc::Vector<T>(base::data(), Vc::Vector<tIndexType>(D) * i + Vc::Vector<tIndexType>(d));
     }
 
+    inline void store(const Vc::Vector<tIndexType> &i, const tDimType &d, const Vc::Vector<T> &data) {
+        data.scatter(base::data(), Vc::Vector<tIndexType>(D) * i + Vc::Vector<tIndexType>(d));
+    }
+
 #endif
 
     inline auto size() const {
@@ -87,6 +91,10 @@ public:
 
     inline Vc::Vector<T> operator()(const Vc::Vector<tIndexType> &i, const tDimType &d) const {
         return Vc::Vector<T>(base::operator[](d).data(), i);
+    }
+
+    inline void store(const Vc::Vector<tIndexType> &i, const tDimType &d, const Vc::Vector<T> &data) {
+        data.scatter(base::operator[](d).data(), i);
     }
 
 #endif

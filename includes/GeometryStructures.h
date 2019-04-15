@@ -208,6 +208,10 @@ public:
         return f_subdets(i, d);
     }
 
+    inline void subdets_store(const Vc::Vector<tIndexType> &i, const tDimType &d, const Vc::Vector<Precision> &data) {
+        f_subdets.store(i, d, data);
+    }
+
 #endif
 };
 
@@ -220,6 +224,12 @@ public:
 
     using Precision = typename Traits::Precision;
     static constexpr tDimType D = Traits::D;
+
+#ifdef HAS_Vc
+    static constexpr bool isVectorized = true;
+#else
+    static constexpr bool isVectorized = false;
+#endif
 
 private:
     MemoryLayout<tIndexType, D + 1> vertices;
@@ -258,7 +268,7 @@ public:
 #ifdef HAS_Vc
 
     inline Vc::Vector<tIndexType> neighbor(const Vc::Vector<tIndexType> &i, const tDimType &d) const {
-        return neighbor(i, d);
+        return neighbors(i, d);
     }
 
 #endif

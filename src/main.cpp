@@ -184,18 +184,41 @@ struct Checker<3, Precision> {
 
         bool valid = true;
 
-        for (tIndexType i = 0; i < simplices.size(); ++i) {
-            auto s = simplices.get(i);
+        if constexpr (SimplexArray::isVectorized) {
+            for (auto i = Vc::Vector<tIndexType>::IndexesFromZero(); i.max() < simplices.size();
+                 i += Vc::Vector<tIndexType>(Vc::Vector<tIndexType>::size())) {
 
-            for (tDimType n = 0; n < D + 1; ++n) {
-                if (s.neighbor(n) != INF) {
-                    auto sn = simplices.get(n);
+                for (tDimType d = 0; d < D + 1; ++d) {
 
-                    for (tDimType j = 0; j < D + 1; ++j) {
-                        Precision det = insphere_fast<D, Precision>(i, sn.vertex(j), simplices, points);
+                    auto neighbors = simplices.neighbor(i, d);
+                    auto mask = neighbors == INF;
+                    neighbors(mask) = 0;
 
-                        if (det < 0) {
+                    for (tDimType d2 = 0; d2 < D + 1; ++d2) {
+
+                        auto p = simplices.vertex(neighbors, d2);
+                        auto det = insphere_fast<D, Precision>(i, p, simplices, points);
+
+                        if (Vc::any_of((det < 0) & !Vc::simd_cast<Vc::Mask<Precision>>(mask))) {
                             valid = false;
+                        }
+                    }
+                }
+            }
+        } else {
+            for (tIndexType i = 0; i < simplices.size(); ++i) {
+                auto s = simplices.get(i);
+
+                for (tDimType n = 0; n < D + 1; ++n) {
+                    if (s.neighbor(n) != INF) {
+                        auto sn = simplices.get(n);
+
+                        for (tDimType j = 0; j < D + 1; ++j) {
+                            Precision det = insphere_fast<D, Precision>(i, sn.vertex(j), simplices, points);
+
+                            if (det < 0) {
+                                valid = false;
+                            }
                         }
                     }
                 }
@@ -220,7 +243,8 @@ void timeFunction(SimplexArray &simplices, const PointArray &points) {
     auto t4 = std::chrono::high_resolution_clock::now();
     auto tCheck = std::chrono::duration_cast<std::chrono::duration<double>>(t4 - t3).count();
 
-    std::cout << "Layout: " << SimplexArray::template MemoryLayout<typename SimplexArray::Precision, SimplexArray::D>::name()
+    std::cout << "Layout: "
+              << SimplexArray::template MemoryLayout<typename SimplexArray::Precision, SimplexArray::D>::name()
               << " valid: " << valid
               << " Precomp: " << (SimplexArray::hasSubdets ? std::to_string(tPrep) : "no")
               << " Check: " << tCheck
@@ -230,7 +254,7 @@ void timeFunction(SimplexArray &simplices, const PointArray &points) {
 }
 
 #define D 3
-#define Precision double
+#define Precision float
 
 #ifdef NDEBUG
 #define N 1e6

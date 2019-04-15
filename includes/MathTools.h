@@ -89,21 +89,21 @@ void subdeterminants(const Vc::Vector<tIndexType> &s, SimplexArray &simplices, c
         clift = ac[X] * ac[X] + ac[Y] * ac[Y] + ac[Z] * ac[Z];
         dlift = ad[X] * ad[X] + ad[Y] * ad[Y] + ad[Z] * ad[Z];
 
-        simplices.subdets(s, 0) = determinant3x3<Precision>(ab[Y], ab[Z], blift,
-                                                            ac[Y], ac[Z], clift,
-                                                            ad[Y], ad[Z], dlift);
+        simplices.subdets_store(s, 0, determinant3x3<Precision>(ab[Y], ab[Z], blift,
+                                                                ac[Y], ac[Z], clift,
+                                                                ad[Y], ad[Z], dlift));
 
-        simplices.subdets(s, 1) = determinant3x3<Precision>(ab[X], ab[Z], blift,
-                                                            ac[X], ac[Z], clift,
-                                                            ad[X], ad[Z], dlift);
+        simplices.subdets_store(s, 1, determinant3x3<Precision>(ab[X], ab[Z], blift,
+                                                                ac[X], ac[Z], clift,
+                                                                ad[X], ad[Z], dlift));
 
-        simplices.subdets(s, 2) = determinant3x3<Precision>(ab[X], ab[Y], blift,
-                                                            ac[X], ac[Y], clift,
-                                                            ad[X], ad[Y], dlift);
+        simplices.subdets_store(s, 2, determinant3x3<Precision>(ab[X], ab[Y], blift,
+                                                                ac[X], ac[Y], clift,
+                                                                ad[X], ad[Y], dlift));
 
-        simplices.subdets(s, 3) = determinant3x3<Precision>(ab[X], ab[Y], ab[Z],
-                                                            ac[X], ac[Y], ac[Z],
-                                                            ad[X], ad[Y], ad[Z]);
+        simplices.subdets_store(s, 3, determinant3x3<Precision>(ab[X], ab[Y], ab[Z],
+                                                                ac[X], ac[Y], ac[Z],
+                                                                ad[X], ad[Y], ad[Z]));
 
     }
 
@@ -162,4 +162,58 @@ insphere_fast(const tIndexType &s, const tIndexType &pe, const SimplexArray &sim
     }
 
 }
+
+#ifdef HAS_Vc
+template<tDimType D, typename Precision, class SimplexArray, class PointArray>
+Vc::Vector<Precision>
+insphere_fast(const Vc::Vector<tIndexType> &s, const Vc::Vector<tIndexType> &pe, const SimplexArray &simplices, const PointArray &points) {
+
+    if constexpr (SimplexArray::hasSubdets) {
+        Vc::Vector<Precision> ae[D];
+        Vc::Vector<Precision> elift;
+
+        for (uint i = 0; i < D; ++i) {
+            ae[i] = points(pe, i) - points(simplices.vertex(s, 0), i);
+        }
+
+        elift = ae[X] * ae[X] + ae[Y] * ae[Y] + ae[Z] * ae[Z];
+
+        return -ae[X] * simplices.subdets(s, 0) + ae[Y] * simplices.subdets(s, 1) - ae[Z] * simplices.subdets(s, 2) +
+               elift * simplices.subdets(s, 3);
+    } else {
+        Vc::Vector<Precision> ae[D], be[D], ce[D], de[D];
+        Vc::Vector<Precision> alift, blift, clift, dlift;
+        Vc::Vector<Precision> ab, bc, cd, da, ac, bd;
+        Vc::Vector<Precision> abc, bcd, cda, dab;
+
+        for (uint i = 0; i < D; ++i) {
+            ae[i] = points(simplices.vertex(s, 0), i) - points(pe, i);
+            be[i] = points(simplices.vertex(s, 1), i) - points(pe, i);
+            ce[i] = points(simplices.vertex(s, 2), i) - points(pe, i);
+            de[i] = points(simplices.vertex(s, 3), i) - points(pe, i);
+        }
+
+        ab = ae[X] * be[Y] - be[X] * ae[Y];
+        bc = be[X] * ce[Y] - ce[X] * be[Y];
+        cd = ce[X] * de[Y] - de[X] * ce[Y];
+        da = de[X] * ae[Y] - ae[X] * de[Y];
+
+        ac = ae[X] * ce[Y] - ce[X] * ae[Y];
+        bd = be[X] * de[Y] - de[X] * be[Y];
+
+        abc = ae[Z] * bc - be[Z] * ac + ce[Z] * ab;
+        bcd = be[Z] * cd - ce[Z] * bd + de[Z] * bc;
+        cda = ce[Z] * da + de[Z] * ac + ae[Z] * cd;
+        dab = de[Z] * ab + ae[Z] * bd + be[Z] * da;
+
+        alift = ae[X] * ae[X] + ae[Y] * ae[Y] + ae[Z] * ae[Z];
+        blift = be[X] * be[X] + be[Y] * be[Y] + be[Z] * be[Z];
+        clift = ce[X] * ce[X] + ce[Y] * ce[Y] + ce[Z] * ce[Z];
+        dlift = de[X] * de[X] + de[Y] * de[Y] + de[Z] * de[Z];
+
+        return (dlift * abc - clift * dab) + (blift * cda - alift * bcd);
+    }
+
+}
+#endif
 
