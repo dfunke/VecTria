@@ -4,9 +4,9 @@ cmake_policy(VERSION 3.0)
 project(ParDeTria CXX)
 
 # prohibit in-source builds
-if("${PROJECT_SOURCE_DIR}" STREQUAL "${PROJECT_BINARY_DIR}")
-  message(SEND_ERROR "In-source builds are not allowed.")
-endif()
+if ("${PROJECT_SOURCE_DIR}" STREQUAL "${PROJECT_BINARY_DIR}")
+    message(SEND_ERROR "In-source builds are not allowed.")
+endif ()
 
 # set output dir to bin
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
@@ -14,8 +14,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
 # setup ccache if found
 find_program(CCACHE_PROG ccache)
 if (NOT CCACHE_PROG MATCHES NOTFOUND)
-  set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
-  set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
 endif ()
 
 # adds the project-specific cmake module directory cmake/Modules to the cmake
@@ -33,24 +33,40 @@ include_directories("${PROJECT_SOURCE_DIR}/includes")
 find_package(CGAL REQUIRED)
 include(${CGAL_USE_FILE})
 
-find_package(VTune)
-if(VTUNE_FOUND)
-    message(STATUS "VTUNE instrumentation enabled")
-    include_directories(
-            SYSTEM
-            ${VTUNE_INCLUDE_DIRS}
-    )
-    add_definitions(-DHAS_VTUNE)
-endif()
+option(VTUNE "Enable VTune instrumentation if found" OFF)
+if (VTUNE)
+    find_package(VTune)
+    if (VTUNE_FOUND)
+        message(STATUS "VTUNE instrumentation enabled")
+        include_directories(
+                SYSTEM
+                ${VTUNE_INCLUDE_DIRS}
+        )
+        add_definitions(-DHAS_VTUNE)
+    endif ()
+endif ()
+
+option(ADVISOR "Enable Advisor instrumentation if found" OFF)
+if (ADVISOR)
+    find_package(Advisor)
+    if (Advisor_FOUND)
+        message(STATUS "Advisor instrumentation enabled")
+        include_directories(
+                SYSTEM
+                ${Advisor_INCLUDE_DIRS}
+        )
+        add_definitions(-DHAS_ADVISOR)
+    endif ()
+endif ()
 
 find_package(Vc)
-if(Vc_FOUND)
+if (Vc_FOUND)
     include_directories(
             SYSTEM
             ${Vc_INCLUDE_DIRS}
     )
     add_definitions(-DHAS_Vc)
-endif()
+endif ()
 
 
 # add all sources

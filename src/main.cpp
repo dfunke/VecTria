@@ -24,6 +24,10 @@
 #include <ittnotify.h>
 #endif
 
+#ifdef HAS_ADVISOR
+#include <advisor-annotate.h>
+#endif
+
 #include "GeometryStructures.h"
 #include "Predicates.h"
 
@@ -240,6 +244,10 @@ int main() {
     __itt_pause();
 #endif
 
+#ifdef HAS_ADVISOR
+    ANNOTATE_DISABLE_COLLECTION_PUSH;
+#endif
+
     PointArray<Traits<D, Precision, MemoryLayoutAoA, NoPrecomputation>> points_aoa;
     generatePoints<D, Precision>(points_aoa, N);
 
@@ -260,6 +268,10 @@ int main() {
 
 #ifdef HAS_VTUNE
     __itt_resume();
+#endif
+
+#ifdef HAS_ADVISOR
+    ANNOTATE_DISABLE_COLLECTION_POP;
 #endif
 
     timeFunction(simplices_aoa_np, points_aoa);

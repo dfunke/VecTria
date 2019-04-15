@@ -8,6 +8,11 @@ if(VTUNE_FOUND)
             ${VTUNE_LIBRARIES})
 endif()
 
+if(Advisor_FOUND)
+    target_link_libraries(main
+            ${Advisor_LIBRARIES})
+endif()
+
 if(Vc_FOUND)
     target_link_libraries(main
             ${Vc_LIBRARIES})
