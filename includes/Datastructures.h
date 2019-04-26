@@ -18,6 +18,12 @@ constexpr tDimType X = 0;
 constexpr tDimType Y = 1;
 constexpr tDimType Z = 2;
 
+#ifndef NDEBUG
+#define ACCESS at
+#else
+#define ACCESS operator[]
+#endif
+
 template<typename Precision>
 using tFloatVector = std::vector<Precision>;
 using tIndexVector = std::vector<tIndexType>;
@@ -26,41 +32,34 @@ template<typename T, tDimType D>
 class MemoryLayoutPA : private std::vector<T> {
 private:
     using base = std::vector<T>;
+    tIndexType m_size = 0;
+
+public:
+    static constexpr bool isVectorized = false;
 
 public:
 
     inline const T &operator()(const tIndexType &i, const tDimType &d) const {
-        return base::operator[](D * i + d);
+        return base::ACCESS(D * i + d);
     }
 
     inline T &operator()(const tIndexType &i, const tDimType &d) {
-        return base::operator[](D * i + d);
+        return base::ACCESS(D * i + d);
     }
-
-#ifdef HAS_Vc
-
-    inline Vc::Vector<T> operator()(const Vc::Vector<tIndexType> &i, const tDimType &d) const {
-        return Vc::Vector<T>(base::data(), Vc::Vector<tIndexType>(D) * i + Vc::Vector<tIndexType>(d));
-    }
-
-    inline void store(const Vc::Vector<tIndexType> &i, const tDimType &d, const Vc::Vector<T> &data) {
-        data.scatter(base::data(), Vc::Vector<tIndexType>(D) * i + Vc::Vector<tIndexType>(d));
-    }
-
-#endif
 
     inline auto size() const {
-        return base::size() / D;
+        return m_size;
     }
 
     inline void ensure(const tIndexType &i) {
-        if (base::size() < D * (i + 1)) {
+        if (m_size < i) {
             base::resize(D * (i + 1));
+            m_size = i + 1;
         }
     }
 
     inline void ensure(const tIndexType &i) const {
-        if (base::size() < D * (i + 1)) {
+        if (m_size < i) {
             throw std::out_of_range(
                     "index " + std::to_string(i) + " is out of range " + std::to_string(size() / D));
         }
@@ -76,47 +75,38 @@ template<typename T, tDimType D>
 class MemoryLayoutAoA : private std::array<std::vector<T>, D> {
 private:
     using base = std::array<std::vector<T>, D>;
+    tIndexType m_size = 0;
+
+public:
+    static constexpr bool isVectorized = false;
 
 public:
 
     inline const T &operator()(const tIndexType &i, const tDimType &d) const {
-        return base::operator[](d)[i];
+        return base::ACCESS(d).ACCESS(i);
     }
 
     inline T &operator()(const tIndexType &i, const tDimType &d) {
-        return base::operator[](d)[i];
+        return base::ACCESS(d).ACCESS(i);
     }
-
-#ifdef HAS_Vc
-
-    inline Vc::Vector<T> operator()(const Vc::Vector<tIndexType> &i, const tDimType &d) const {
-        return Vc::Vector<T>(base::operator[](d).data(), i);
-    }
-
-    inline void store(const Vc::Vector<tIndexType> &i, const tDimType &d, const Vc::Vector<T> &data) {
-        data.scatter(base::operator[](d).data(), i);
-    }
-
-#endif
 
     inline auto size() const {
-        return base::operator[](0).size();
+        return m_size;
     }
 
     inline void ensure(const tIndexType &i) {
-        for (tDimType d = 0; d < D; ++d) {
-            if (base::operator[](d).size() < i + 1) {
-                base::operator[](d).resize(i + 1);
+        if (m_size < i) {
+            for (tDimType d = 0; d < D; ++d) {
+                base::ACCESS(d).resize(i + 1);
             }
+            m_size = i + 1;
         }
     }
 
     inline void ensure(const tIndexType &i) const {
-        for (tDimType d = 0; d < D; ++d) {
-            if (base::operator[](d).size() < i + 1) {
-                throw std::out_of_range(
-                        "index " + std::to_string(i) + " is out of range " + std::to_string(size()));
-            }
+        if (m_size < i) {
+            throw std::out_of_range(
+                    "index " + std::to_string(i) + " is out of range " + std::to_string(size()));
         }
     }
 
@@ -125,4 +115,202 @@ public:
     }
 
 };
+
+#ifdef HAS_Vc
+
+template<typename T, tDimType D>
+class MemoryLayoutVectorizedPA : private std::vector<T> {
+private:
+    using base = std::vector<T>;
+    tIndexType m_size = 0;
+
+public:
+    static constexpr bool isVectorized = true;
+
+public:
+
+    inline const T &operator()(const tIndexType &i, const tDimType &d) const {
+        return base::ACCESS(D * i + d);
+    }
+
+    inline T &operator()(const tIndexType &i, const tDimType &d) {
+        return base::ACCESS(D * i + d);
+    }
+
+    inline Vc::Vector<T> vec(const Vc::Vector<tIndexType> &i, const tDimType &d) const {
+        return Vc::Vector<T>(base::data(), Vc::Vector<tIndexType>(D) * i + Vc::Vector<tIndexType>(d));
+    }
+
+    inline Vc::Vector<T> vec(const tIndexType &i, const tDimType &d) const {
+        return Vc::Vector<T>(base::data(), Vc::Vector<tIndexType>(D) *
+                                           (Vc::Vector<tIndexType>(i) + Vc::Vector<tIndexType>::IndexesFromZero()) +
+                                           Vc::Vector<tIndexType>(d));
+    }
+
+    inline void store(const Vc::Vector<tIndexType> &i, const tDimType &d, const Vc::Vector<T> &data) {
+        data.scatter(base::data(), Vc::Vector<tIndexType>(D) * i + Vc::Vector<tIndexType>(d));
+    }
+
+    inline void store(const tIndexType &i, const tDimType &d, const Vc::Vector<T> &data) {
+        data.scatter(base::data(), Vc::Vector<tIndexType>(D) *
+                                   (Vc::Vector<tIndexType>(i) + Vc::Vector<tIndexType>::IndexesFromZero()) +
+                                   Vc::Vector<tIndexType>(d));
+    }
+
+    inline auto size() const {
+        return m_size;
+    }
+
+    inline void ensure(const tIndexType &i) {
+        if (m_size < i) {
+            base::resize(D * (i + 1));
+            m_size = i + 1;
+        }
+    }
+
+    inline void ensure(const tIndexType &i) const {
+        if (m_size < i) {
+            throw std::out_of_range(
+                    "index " + std::to_string(i) + " is out of range " + std::to_string(size() / D));
+        }
+    }
+
+    static std::string name() {
+        return "vectorized PA";
+    }
+
+};
+
+template<typename T, tDimType D>
+class MemoryLayoutVectorizedGroupedPA : private std::vector<T> {
+private:
+    using base = std::vector<T>;
+    tIndexType m_size = 0;
+
+public:
+    static constexpr bool isVectorized = true;
+
+private:
+    static constexpr tIndexType N = Vc::Vector<T>::size();
+    static constexpr tIndexType ND = N * D;
+
+public:
+
+    inline const T &operator()(const tIndexType &i, const tDimType &d) const {
+        return base::ACCESS((i / N) * ND + d * N + i % N);
+    }
+
+    inline T &operator()(const tIndexType &i, const tDimType &d) {
+        return base::ACCESS((i / N) * ND + d * N + i % N);
+    }
+
+    inline Vc::Vector<T> vec(const Vc::Vector<tIndexType> &i, const tDimType &d) const {
+        return Vc::Vector<T>(base::data(),
+                             (i / Vc::Vector<tIndexType>(N)) * Vc::Vector<tIndexType>(ND)
+                             + Vc::Vector<tIndexType>(d) * Vc::Vector<tIndexType>(N) +
+                             i % Vc::Vector<tIndexType>(N));
+    }
+
+    inline Vc::Vector<T> vec(const tIndexType &i, const tDimType &d) const {
+        return Vc::Vector<T>(&base::data()[(i / N) * ND + d * N]);
+    }
+
+    inline void store(const Vc::Vector<tIndexType> &i, const tDimType &d, const Vc::Vector<T> &data) {
+        data.scatter(base::data(), (i / Vc::Vector<tIndexType>(N)) * Vc::Vector<tIndexType>(ND)
+                                   + Vc::Vector<tIndexType>(d) * Vc::Vector<tIndexType>(N) +
+                                   i % Vc::Vector<tIndexType>(N));
+    }
+
+    inline void store(const tIndexType &i, const tDimType &d, const Vc::Vector<T> &data) {
+        data.store(&base::data().ACCESS((i / N) * ND + d * N));
+    }
+
+    inline auto size() const {
+        return m_size;
+    }
+
+    inline void ensure(const tIndexType &i) {
+        if (m_size < i) {
+            base::resize(((i / N) + 1) * ND);
+            m_size = i + 1;
+        }
+    }
+
+    inline void ensure(const tIndexType &i) const {
+        if (m_size < i) {
+            throw std::out_of_range(
+                    "index " + std::to_string(i) + " is out of range " + std::to_string(size() / D));
+        }
+    }
+
+    static std::string name() {
+        return "vectorized grouped PA";
+    }
+
+};
+
+template<typename T, tDimType D>
+class MemoryLayoutVectorizedAoA : private std::array<std::vector<T>, D> {
+private:
+    using base = std::array<std::vector<T>, D>;
+    tIndexType m_size = 0;
+
+public:
+    static constexpr bool isVectorized = true;
+
+public:
+
+    inline const T &operator()(const tIndexType &i, const tDimType &d) const {
+        return base::ACCESS(d).ACCESS(i);
+    }
+
+    inline T &operator()(const tIndexType &i, const tDimType &d) {
+        return base::ACCESS(d).ACCESS(i);
+    }
+
+    inline Vc::Vector<T> vec(const Vc::Vector<tIndexType> &i, const tDimType &d) const {
+        return Vc::Vector<T>(base::ACCESS(d).data(), i);
+    }
+
+    inline Vc::Vector<T> vec(const tIndexType &i, const tDimType &d) const {
+        return Vc::Vector<T>(&base::ACCESS(d).data()[i]);
+    }
+
+    inline void store(const Vc::Vector<tIndexType> &i, const tDimType &d, const Vc::Vector<T> &data) {
+        data.scatter(base::ACCESS(d).data(), i);
+    }
+
+    inline void store(const tIndexType &i, const tDimType &d, const Vc::Vector<T> &data) {
+        data.store(&base::ACCESS(d).data().ACCESS(i));
+    }
+
+    inline auto size() const {
+        return m_size;
+    }
+
+    inline void ensure(const tIndexType &i) {
+        if (m_size < i) {
+            for (tDimType d = 0; d < D; ++d) {
+                base::ACCESS(d).resize(i + 1);
+            }
+            m_size = i + 1;
+        }
+    }
+
+    inline void ensure(const tIndexType &i) const {
+
+        if (m_size < i) {
+            throw std::out_of_range(
+                    "index " + std::to_string(i) + " is out of range " + std::to_string(size()));
+        }
+
+    }
+
+    static std::string name() {
+        return "vectorized AoA";
+    }
+
+};
+
+#endif
 

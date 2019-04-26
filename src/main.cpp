@@ -33,22 +33,145 @@
 
 #define SEED 1986
 
+using K = CGAL::Exact_predicates_inexact_constructions_kernel;
+
+//2D definitions
+using Vb_2 = CGAL::Triangulation_vertex_base_with_info_2<tIndexType, K>;
+using Cb_2 = CGAL::Triangulation_face_base_with_info_2<tIndexType, K>;
+using Tds_2 = CGAL::Triangulation_data_structure_2<Vb_2, Cb_2>;
+using DT_2 = CGAL::Delaunay_triangulation_2<K, Tds_2>;
+using Point_2 = DT_2::Point;
+using PointWithInfo_2 = std::pair<Point_2, tIndexType>;
+using Points_2 = std::vector<PointWithInfo_2>;
+using SearchTraits_2 = CGAL::Spatial_sort_traits_adapter_2<K, CGAL::First_of_pair_property_map<PointWithInfo_2>>;
+//        using Fh_2 = DT_2::Face_handle;
+//        using Vh_2 = DT_2::Vertex_handle;
+//        using Circ_2 = CGAL::Circle_2<K>;
+//        using Box_2 = CGAL::Bbox_2;
+//        using Vec_2 = CGAL::Vector_2<K>;
+
+//3D definitions
+using Vb_3 = CGAL::Triangulation_vertex_base_with_info_3<tIndexType, K>;
+using Cb_3 = CGAL::Triangulation_cell_base_with_info_3<tIndexType, K>;
+using Tds_3 = CGAL::Triangulation_data_structure_3<Vb_3, Cb_3>;
+using DT_3 = CGAL::Delaunay_triangulation_3<K, Tds_3>;
+using Point_3 = DT_3::Point;
+using PointWithInfo_3 = std::pair<Point_3, tIndexType>;
+using Points_3 = std::vector<PointWithInfo_3>;
+using SearchTraits_3 = CGAL::Spatial_sort_traits_adapter_3<K, CGAL::First_of_pair_property_map<PointWithInfo_3>>;
+//        using Fh_3 = DT_3::Cell_handle;
+//        using Vh_3 = DT_3::Vertex_handle;
+//        using Circ_3 = CGAL::Sphere_3<K>;
+//        using Box_3 = CGAL::Bbox_3;
+//        using Vec_3 = CGAL::Vector_3<K>;
+
 template<tDimType D, typename Precision, class PointArray>
-void generatePoints(PointArray &pa, const tIndexType &n) {
+std::ostream &operator<<(std::ostream &os, const Point<D, Precision, PointArray> &p) {
+    os << "[" << p[0];
 
-    std::mt19937 generator(SEED);
-    std::uniform_real_distribution<Precision> distribution;
-    auto rand = std::bind(distribution, generator);
+    for (tDimType d = 1; d < D; ++d) {
+        os << ", " << p[d];
 
-    pa.ensure(n);
-    for (tIndexType i = 0; i < n; ++i) {
-        auto p = pa.get(i);
+    }
+    os << "]";
 
-        for (tDimType d = 0; d < D; ++d) {
-            p[d] = rand();
+    return os;
+}
+
+template<tDimType D, class SimplexArray>
+std::ostream &operator<<(std::ostream &os, const Simplex<D, SimplexArray> &s) {
+    os << "[" << s.vertex(0);
+
+    for (tDimType d = 1; d < D + 1; ++d) {
+        os << ", " << s.vertex(d);
+
+    }
+    os << "]";
+    os << " (" << s.neighbor(0);
+
+    for (tDimType d = 1; d < D + 1; ++d) {
+        os << ", " << s.neighbor(d);
+
+    }
+    os << ")";
+
+    return os;
+}
+
+
+template<tDimType D, typename Precision>
+struct Generator;
+
+template<typename Precision>
+struct Generator<2, Precision> {
+
+    Points_2 generate(const tIndexType &n) {
+
+        std::mt19937 generator(SEED);
+        std::uniform_real_distribution<Precision> distribution;
+        auto rand = std::bind(distribution, generator);
+
+        Points_2 points;
+        points.reserve(n);
+
+        for (tIndexType i = 0; i < n; ++i) {
+            Point_2 p_cgal(rand(), rand());
+            points.push_back(std::make_pair(p_cgal, i));
+        }
+
+        SearchTraits_2 traits;
+        CGAL::spatial_sort(points.begin(), points.end(), traits);
+
+        return points;
+    }
+
+    template<class PointArray>
+    void convert(PointArray &pa, const Points_2 &points) {
+        pa.ensure(points.size());
+        for (tIndexType i = 0; i < points.size(); ++i) {
+            auto p = pa.get(i);
+
+            p[0] = points[i].first.x();
+            p[1] = points[i].first.y();
         }
     }
-}
+};
+
+template<typename Precision>
+struct Generator<3, Precision> {
+
+    Points_3 generate(const tIndexType &n) {
+
+        std::mt19937 generator(SEED);
+        std::uniform_real_distribution<Precision> distribution;
+        auto rand = std::bind(distribution, generator);
+
+        Points_3 points;
+        points.reserve(n);
+
+        for (tIndexType i = 0; i < n; ++i) {
+            Point_3 p_cgal(rand(), rand(), rand());
+            points.push_back(std::make_pair(p_cgal, i));
+        }
+
+        SearchTraits_3 traits;
+        CGAL::spatial_sort(points.begin(), points.end(), traits);
+
+        return points;
+    }
+
+    template<class PointArray>
+    void convert(PointArray &pa, const Points_3 &points) {
+        pa.ensure(points.size());
+        for (tIndexType i = 0; i < points.size(); ++i) {
+            auto p = pa.get(i);
+
+            p[0] = points[i].first.x();
+            p[1] = points[i].first.y();
+            p[2] = points[i].first.z();
+        }
+    }
+};
 
 template<tDimType D>
 struct Triangulator;
@@ -56,34 +179,15 @@ struct Triangulator;
 template<>
 struct Triangulator<2> {
 
-    template<class SimplexArray, class PointArray>
-    SimplexArray triangulate(const PointArray &pa) {
-
-        using K = CGAL::Exact_predicates_inexact_constructions_kernel;
-
-//2D definitions
-        using Vb_2 = CGAL::Triangulation_vertex_base_with_info_2<tIndexType, K>;
-        using Cb_2 = CGAL::Triangulation_face_base_with_info_2<tIndexType, K>;
-        using Tds_2 = CGAL::Triangulation_data_structure_2<Vb_2, Cb_2>;
-        using DT_2 = CGAL::Delaunay_triangulation_2<K, Tds_2>;
-        using Point_2 = DT_2::Point;
-        using Points_2 = std::vector<std::pair<Point_2, tIndexType>>;
-//        using Fh_2 = DT_2::Face_handle;
-//        using Vh_2 = DT_2::Vertex_handle;
-//        using Circ_2 = CGAL::Circle_2<K>;
-//        using Box_2 = CGAL::Bbox_2;
-//        using Vec_2 = CGAL::Vector_2<K>;
-
-        Points_2 P;
-        P.reserve(pa.size());
-
-        for (unsigned int i = 0; i < pa.size(); ++i) {
-            auto p = pa.get(i);
-            Point_2 p_cgal(p[0], p[1]);
-            P.push_back(std::make_pair(p_cgal, i));
-        }
+    auto cgal(const Points_2 &P) {
 
         DT_2 T(P.begin(), P.end());
+
+        return T;
+    }
+
+    template<class SimplexArray, class DT>
+    auto convert(const DT &T) {
 
         tIndexType simplexId = 0;
         for (auto it = T.finite_faces_begin(); it != T.finite_faces_end(); ++it) {
@@ -114,34 +218,15 @@ struct Triangulator<2> {
 template<>
 struct Triangulator<3> {
 
-    template<class SimplexArray, class PointArray>
-    SimplexArray triangulate(const PointArray &pa) {
-
-        using K = CGAL::Exact_predicates_inexact_constructions_kernel;
-
-//3D definitions
-        using Vb_3 = CGAL::Triangulation_vertex_base_with_info_3<tIndexType, K>;
-        using Cb_3 = CGAL::Triangulation_cell_base_with_info_3<tIndexType, K>;
-        using Tds_3 = CGAL::Triangulation_data_structure_3<Vb_3, Cb_3>;
-        using DT_3 = CGAL::Delaunay_triangulation_3<K, Tds_3>;
-        using Point_3 = DT_3::Point;
-        using Points_3 = std::vector<std::pair<Point_3, tIndexType>>;
-//        using Fh_3 = DT_3::Cell_handle;
-//        using Vh_3 = DT_3::Vertex_handle;
-//        using Circ_3 = CGAL::Sphere_3<K>;
-//        using Box_3 = CGAL::Bbox_3;
-//        using Vec_3 = CGAL::Vector_3<K>;
-
-        Points_3 P;
-        P.reserve(pa.size());
-
-        for (unsigned int i = 0; i < pa.size(); ++i) {
-            auto p = pa.get(i);
-            Point_3 p_cgal(p[0], p[1], p[2]);
-            P.push_back(std::make_pair(p_cgal, i));
-        }
+    auto cgal(const Points_3 &P) {
 
         DT_3 T(P.begin(), P.end());
+
+        return T;
+    }
+
+    template<class SimplexArray, class DT>
+    auto convert(const DT &T) {
 
         tIndexType simplexId = 0;
         for (auto it = T.finite_cells_begin(); it != T.finite_cells_end(); ++it) {
@@ -185,18 +270,18 @@ struct Checker<3, Precision> {
         bool valid = true;
 
         if constexpr (SimplexArray::isVectorized) {
-            for (auto i = Vc::Vector<tIndexType>::IndexesFromZero(); i.max() < simplices.size();
-                 i += Vc::Vector<tIndexType>(Vc::Vector<tIndexType>::size())) {
+            for (tIndexType i = 0;
+                 i + Vc::Vector<tIndexType>::size() - 1 < simplices.size(); i += Vc::Vector<tIndexType>::size()) {
 
                 for (tDimType d = 0; d < D + 1; ++d) {
 
-                    auto neighbors = simplices.neighbor(i, d);
+                    auto neighbors = simplices.neighbors.vec(i, d);
                     auto mask = neighbors == INF;
                     neighbors(mask) = 0;
 
                     for (tDimType d2 = 0; d2 < D + 1; ++d2) {
 
-                        auto p = simplices.vertex(neighbors, d2);
+                        auto p = simplices.vertices.vec(neighbors, d2);
                         auto det = insphere_fast<D, Precision>(i, p, simplices, points);
 
                         if (Vc::any_of((det < 0) & !Vc::simd_cast<Vc::Mask<Precision>>(mask))) {
@@ -253,13 +338,141 @@ void timeFunction(SimplexArray &simplices, const PointArray &points) {
 
 }
 
+template<class SimplexArray1, class PointArray1, class SimplexArray2, class PointArray2>
+void verify(const SimplexArray1 &simplices1, const PointArray1 &points1,
+            const SimplexArray2 &simplices2, const PointArray2 &points2) {
+
+    std::cout << "Checking\n"
+              << "\tLayout1: "
+              << SimplexArray1::template MemoryLayout<typename SimplexArray1::Precision, SimplexArray1::D>::name()
+              << "\tLayout2: "
+              << SimplexArray2::template MemoryLayout<typename SimplexArray2::Precision, SimplexArray2::D>::name()
+              << std::endl;
+
+    // check number of points
+    if (points1.size() != points2.size()) {
+        std::cout << "Number points: " << points1.size() << " vs " << points2.size() << std::endl;
+    }
+
+    // check points
+    for (tIndexType i = 0; i < points1.size(); ++i) {
+        auto p1 = points1.get(i);
+        auto p2 = points2.get(i);
+
+        if (!(p1 == p2)) {
+            std::cout << "Points " << i << " differ: (" << p1 << ") vs (" << p2 << ")" << std::endl;
+        }
+    }
+
+    // check number of simplices
+    if (simplices1.size() != simplices2.size()) {
+        std::cout << "Number simplices: " << simplices1.size() << " vs " << simplices2.size() << std::endl;
+    }
+
+    // check simplices
+    for (tIndexType i = 0; i < simplices1.size(); ++i) {
+        auto s1 = simplices1.get(i);
+        auto s2 = simplices2.get(i);
+
+        if (!(s1 == s2)) {
+            std::cout << "Simplices " << i << " differ: (" << s1 << ") vs (" << s2 << ")" << std::endl;
+        }
+
+        if constexpr (SimplexArray2::isVectorized) {
+
+            // vector of indices access
+            for (Vc::Vector<tIndexType> i = Vc::Vector<tIndexType>::IndexesFromZero();
+                 i.max() < simplices2.size(); i += Vc::Vector<tIndexType>(Vc::Vector<tIndexType>::size())) {
+
+                Vc::Vector<tIndexType> v[SimplexArray2::D + 1], n[SimplexArray2::D + 1];
+
+                for (tDimType d = 0; d < SimplexArray2::D + 1; ++d) {
+                    v[d] = simplices2.vertices.vec(i, d);
+                    n[d] = simplices2.neighbors.vec(i, d);
+                }
+
+                for (std::size_t j = 0; j < Vc::Vector<tIndexType>::size(); ++j) {
+                    auto s1 = simplices1.get(i[j]);
+                    bool valid = true;
+
+                    for (tDimType d = 0; d < SimplexArray2::D + 1; ++d) {
+                        if ((s1.vertex(d) != v[d][j]) || (s1.neighbor(d) != n[d][j])) {
+                            valid = false;
+                        }
+                    }
+
+                    if (!valid) {
+                        std::cout << "Simplices " << j << ": " << i[j]
+                                  << " differ: (" << s1 << ") vs (" << "[" << v[0][j];
+
+                        for (tDimType d = 1; d < SimplexArray2::D + 1; ++d) {
+                            std::cout << ", " << v[d][j];
+
+                        }
+                        std::cout << "]";
+                        std::cout << " (" << n[0][j];
+
+                        for (tDimType d = 1; d < SimplexArray2::D + 1; ++d) {
+                            std::cout << ", " << n[d][j];
+
+                        }
+                        std::cout << ")" << ")" << std::endl;
+                    }
+                }
+            }
+
+            // contiguous load access
+            for (tIndexType i = 0;
+                 i + Vc::Vector<tIndexType>::size() - 1 < simplices2.size(); i += Vc::Vector<tIndexType>::size()) {
+
+                Vc::Vector<tIndexType> v[SimplexArray2::D + 1], n[SimplexArray2::D + 1];
+
+                for (tDimType d = 0; d < SimplexArray2::D + 1; ++d) {
+                    v[d] = simplices2.vertices.vec(i, d);
+                    n[d] = simplices2.neighbors.vec(i, d);
+                }
+
+                for (std::size_t j = 0; j < Vc::Vector<tIndexType>::size(); ++j) {
+                    auto s1 = simplices1.get(i + j);
+                    bool valid = true;
+
+                    for (tDimType d = 0; d < SimplexArray2::D + 1; ++d) {
+                        if ((s1.vertex(d) != v[d][j]) || (s1.neighbor(d) != n[d][j])) {
+                            valid = false;
+                        }
+                    }
+
+                    if (!valid) {
+                        std::cout << "Simplices " << j << ": " << i + j
+                                  << " differ: (" << s1 << ") vs (" << "[" << v[0][j];
+
+                        for (tDimType d = 1; d < SimplexArray2::D + 1; ++d) {
+                            std::cout << ", " << v[d][j];
+
+                        }
+                        std::cout << "]";
+                        std::cout << " (" << n[0][j];
+
+                        for (tDimType d = 1; d < SimplexArray2::D + 1; ++d) {
+                            std::cout << ", " << n[d][j];
+
+                        }
+                        std::cout << ")" << ")" << std::endl;
+                    }
+                }
+            }
+        }
+    }
+
+}
+
 #define D 3
 #define Precision float
 
 #ifdef NDEBUG
 #define N 1e6
 #else
-#define N 1e4
+#define N 1e2
 #endif
 
 int main() {
@@ -272,23 +485,68 @@ int main() {
     ANNOTATE_DISABLE_COLLECTION_PUSH;
 #endif
 
+    Generator<D, Precision> generator;
+    auto cgal_points = generator.generate(N);
+
     PointArray<Traits<D, Precision, MemoryLayoutAoA, NoPrecomputation>> points_aoa;
-    generatePoints<D, Precision>(points_aoa, N);
+    generator.convert(points_aoa, cgal_points);
 
     PointArray<Traits<D, Precision, MemoryLayoutPA, NoPrecomputation>> points_pa;
-    generatePoints<D, Precision>(points_pa, N);
+    generator.convert(points_pa, cgal_points);
+
+#ifdef HAS_Vc
+    PointArray<Traits<D, Precision, MemoryLayoutVectorizedAoA, NoPrecomputation>> points_vaoa;
+    generator.convert(points_vaoa, cgal_points);
+
+    PointArray<Traits<D, Precision, MemoryLayoutVectorizedPA, NoPrecomputation>> points_vpa;
+    generator.convert(points_vpa, cgal_points);
+#endif
 
     Triangulator<D> triangulator;
 
-    auto simplices_aoa_np = triangulator.triangulate<SimplexArray<Traits<D, Precision, MemoryLayoutAoA, NoPrecomputation>>>(
-            points_aoa);
-    auto simplices_pa_np = triangulator.triangulate<SimplexArray<Traits<D, Precision, MemoryLayoutPA, NoPrecomputation>>>(
-            points_pa);
+    auto cgal_DT = triangulator.cgal(cgal_points);
 
-    auto simplices_aoa_wp = triangulator.triangulate<SimplexArray<Traits<D, Precision, MemoryLayoutAoA, PrecomputeSubDets>>>(
-            points_aoa);
-    auto simplices_pa_wp = triangulator.triangulate<SimplexArray<Traits<D, Precision, MemoryLayoutPA, PrecomputeSubDets>>>(
-            points_pa);
+    auto simplices_aoa_np = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutAoA, NoPrecomputation>>>(
+            cgal_DT);
+    auto simplices_pa_np = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutPA, NoPrecomputation>>>(
+            cgal_DT);
+
+    auto simplices_aoa_wp = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutAoA, PrecomputeSubDets>>>(
+            cgal_DT);
+    auto simplices_pa_wp = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutPA, PrecomputeSubDets>>>(
+            cgal_DT);
+
+#ifdef HAS_Vc
+    auto simplices_vaoa_np = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutVectorizedAoA, NoPrecomputation>>>(
+            cgal_DT);
+    auto simplices_vpa_np = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutVectorizedPA, NoPrecomputation>>>(
+            cgal_DT);
+    auto simplices_vgpa_np = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutVectorizedGroupedPA, NoPrecomputation>>>(
+            cgal_DT);
+
+    auto simplices_vaoa_wp = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutVectorizedAoA, PrecomputeSubDets>>>(
+            cgal_DT);
+    auto simplices_vpa_wp = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutVectorizedPA, PrecomputeSubDets>>>(
+            cgal_DT);
+    auto simplices_vgpa_wp = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutVectorizedGroupedPA, PrecomputeSubDets>>>(
+            cgal_DT);
+#endif
+
+    verify(simplices_aoa_np, points_aoa, simplices_aoa_np, points_aoa);
+    verify(simplices_aoa_np, points_aoa, simplices_pa_np, points_pa);
+
+    verify(simplices_aoa_np, points_aoa, simplices_aoa_wp, points_aoa);
+    verify(simplices_aoa_np, points_aoa, simplices_pa_wp, points_pa);
+
+#ifdef HAS_Vc
+    verify(simplices_aoa_np, points_aoa, simplices_vaoa_np, points_vaoa);
+    verify(simplices_aoa_np, points_aoa, simplices_vpa_np, points_vpa);
+    verify(simplices_aoa_np, points_aoa, simplices_vgpa_np, points_vpa);
+
+    verify(simplices_aoa_np, points_aoa, simplices_vaoa_wp, points_vaoa);
+    verify(simplices_aoa_np, points_aoa, simplices_vpa_wp, points_vpa);
+    verify(simplices_aoa_np, points_aoa, simplices_vgpa_wp, points_vpa);
+#endif
 
 #ifdef HAS_VTUNE
     __itt_resume();
@@ -298,11 +556,21 @@ int main() {
     ANNOTATE_DISABLE_COLLECTION_POP;
 #endif
 
-    timeFunction(simplices_aoa_np, points_aoa);
-    timeFunction(simplices_pa_np, points_pa);
+//    timeFunction(simplices_aoa_np, points_aoa);
+//    timeFunction(simplices_pa_np, points_pa);
+//
+//    timeFunction(simplices_aoa_wp, points_aoa);
+//    timeFunction(simplices_pa_wp, points_pa);
 
-    timeFunction(simplices_aoa_wp, points_aoa);
-    timeFunction(simplices_pa_wp, points_pa);
+#ifdef HAS_Vc
+//    timeFunction(simplices_vaoa_np, points_vaoa);
+//    timeFunction(simplices_vpa_np, points_vpa);
+//    timeFunction(simplices_vgpa_np, points_vpa);
+//
+//    timeFunction(simplices_vaoa_wp, points_vaoa);
+//    timeFunction(simplices_vpa_wp, points_vpa);
+//    timeFunction(simplices_vgpa_wp, points_vpa);
+#endif
 
     return 0;
 

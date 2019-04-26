@@ -42,12 +42,23 @@ public:
     }
 
     inline const Precision &operator[](const tDimType &i) const {
-        return m_pointArray(m_idx, i);
+        return m_pointArray.coords(m_idx, i);
     }
 
     template<typename Ret = Precision &>
     inline auto operator[](const tDimType &i) -> std::enable_if_t<not std::is_const_v<PointArray>, Ret> {
-        return m_pointArray(m_idx, i);
+        return m_pointArray.coords(m_idx, i);
+    }
+
+    template<class OtherPoint>
+    bool operator==(const OtherPoint &p) const {
+
+        for (tDimType d = 0; d < D; ++d) {
+            if (operator[](d) != p[d])
+                return false;
+        }
+
+        return true;
     }
 };
 
@@ -61,29 +72,14 @@ public:
     using Precision = typename Traits::Precision;
     static constexpr tDimType D = Traits::D;
 
-private:
+public:
     MemoryLayout<Precision, D> coords;
 
+private:
     using tPoint = Point<D, Precision, PointArray>;
     using tcPoint = Point<D, Precision, const PointArray>;
 
 public:
-
-    inline const Precision &operator()(const tIndexType &i, const tDimType &d) const {
-        return coords(i, d);
-    }
-
-    inline Precision &operator()(const tIndexType &i, const tDimType &d) {
-        return coords(i, d);
-    }
-
-#ifdef HAS_Vc
-
-    inline Vc::Vector<Precision> operator()(const Vc::Vector<tIndexType> &i, const tDimType &d) const {
-        return coords(i, d);
-    }
-
-#endif
 
     void ensure(const tIndexType &i) {
         coords.ensure(i);
@@ -126,21 +122,32 @@ public:
     }
 
     inline const tIndexType &vertex(const tDimType &i) const {
-        return m_simplexArray.vertex(m_idx, i);
+        return m_simplexArray.vertices(m_idx, i);
     }
 
     template<typename Ret = tIndexType &>
     inline auto vertex(const tDimType &i) -> std::enable_if_t<not std::is_const_v<SimplexArray>, Ret> {
-        return m_simplexArray.vertex(m_idx, i);
+        return m_simplexArray.vertices(m_idx, i);
     }
 
     inline const tIndexType &neighbor(const tDimType &i) const {
-        return m_simplexArray.neighbor(m_idx, i);
+        return m_simplexArray.neighbors(m_idx, i);
     }
 
     template<typename Ret = tIndexType &>
     inline auto neighbor(const tDimType &i) -> std::enable_if_t<not std::is_const_v<SimplexArray>, Ret> {
-        return m_simplexArray.neighbor(m_idx, i);
+        return m_simplexArray.neighbors(m_idx, i);
+    }
+
+    template<class OtherSimplex>
+    bool operator==(const OtherSimplex &s) const {
+
+        for (tDimType d = 0; d < D + 1; ++d) {
+            if (vertex(d) != s.vertex(d) || neighbor(d) != s.neighbor(d))
+                return false;
+        }
+
+        return true;
     }
 
 };
@@ -167,8 +174,8 @@ public:
     using Precision = typename Traits::Precision;
     static constexpr tDimType D = Traits::D;
 
-private:
-    MemoryLayout<Precision, D + 1> f_subdets;
+public:
+    MemoryLayout<Precision, D + 1> subdets;
 
 public:
 
@@ -177,42 +184,24 @@ public:
     template<class SimplexArray, class PointArray>
     void precompute(SimplexArray &simplices, const PointArray &points) {
 
-        f_subdets.ensure(simplices.size() - 1);
+        subdets.ensure(simplices.size() - 1);
 
-#ifdef HAS_Vc
-        for (auto i = Vc::Vector<tIndexType>::IndexesFromZero(); i.max() < simplices.size();
-             i += Vc::Vector<tIndexType>(Vc::Vector<tIndexType>::size())) {
+        if constexpr (MemoryLayout<Precision, D + 1>::isVectorized) {
+            for (tIndexType i = 0;
+                 i + Vc::Vector<tIndexType>::size() - 1 < simplices.size(); i += Vc::Vector<tIndexType>::size()) {
 
-            subdeterminants<D, Precision>(i, simplices, points);
+                subdeterminants_v<D, Precision>(i, simplices, points);
 
+            }
+        } else {
+
+            for (tIndexType i = 0; i < simplices.size(); ++i) {
+                subdeterminants<D, Precision>(i, simplices, points);
+
+            }
         }
-#else
-        for (tIndexType i = 0; i < simplices.size(); ++i) {
-            subdeterminants<D, Precision>(i, simplices, points);
 
-        }
-#endif
     }
-
-    inline const Precision &subdets(const tIndexType &i, const tDimType &d) const {
-        return f_subdets(i, d);
-    }
-
-    inline Precision &subdets(const tIndexType &i, const tDimType &d) {
-        return f_subdets(i, d);
-    }
-
-#ifdef HAS_Vc
-
-    inline Vc::Vector<Precision> subdets(const Vc::Vector<tIndexType> &i, const tDimType &d) const {
-        return f_subdets(i, d);
-    }
-
-    inline void subdets_store(const Vc::Vector<tIndexType> &i, const tDimType &d, const Vc::Vector<Precision> &data) {
-        f_subdets.store(i, d, data);
-    }
-
-#endif
 };
 
 template<class Traits>
@@ -224,54 +213,19 @@ public:
 
     using Precision = typename Traits::Precision;
     static constexpr tDimType D = Traits::D;
+    static constexpr bool isVectorized = MemoryLayout<tIndexType, D + 1>::isVectorized;
 
-#ifdef HAS_Vc
-    static constexpr bool isVectorized = true;
-#else
-    static constexpr bool isVectorized = false;
-#endif
-
-private:
+public:
     MemoryLayout<tIndexType, D + 1> vertices;
     MemoryLayout<tIndexType, D + 1> neighbors;
+
+private:
 
     using base = typename Traits::template PrecomputeStrategy<Traits>;
     using tSimplex = Simplex<D, SimplexArray>;
     using tcSimplex = Simplex<D, const SimplexArray>;
 
 public:
-
-    inline const tIndexType &vertex(const tIndexType &i, const tDimType &d) const {
-        return vertices(i, d);
-    }
-
-    inline tIndexType &vertex(const tIndexType &i, const tDimType &d) {
-        return vertices(i, d);
-    }
-
-#ifdef HAS_Vc
-
-    inline Vc::Vector<tIndexType> vertex(const Vc::Vector<tIndexType> &i, const tDimType &d) const {
-        return vertices(i, d);
-    }
-
-#endif
-
-    inline const tIndexType &neighbor(const tIndexType &i, const tDimType &d) const {
-        return neighbors(i, d);
-    }
-
-    inline tIndexType &neighbor(const tIndexType &i, const tDimType &d) {
-        return neighbors(i, d);
-    }
-
-#ifdef HAS_Vc
-
-    inline Vc::Vector<tIndexType> neighbor(const Vc::Vector<tIndexType> &i, const tDimType &d) const {
-        return neighbors(i, d);
-    }
-
-#endif
 
     void ensure(const tIndexType &i) {
         vertices.ensure(i);
