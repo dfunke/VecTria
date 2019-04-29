@@ -222,7 +222,7 @@ public:
     }
 
     inline void store(const tIndexType &i, const tDimType &d, const Vc::Vector<T> &data) {
-        data.store(&base::data().ACCESS((i / N) * ND + d * N));
+        data.store(&base::data()[(i / N) * ND + d * N]);
     }
 
     inline auto size() const {
@@ -281,7 +281,7 @@ public:
     }
 
     inline void store(const tIndexType &i, const tDimType &d, const Vc::Vector<T> &data) {
-        data.store(&base::ACCESS(d).data().ACCESS(i));
+        data.store(&base::ACCESS(d).data()[i]);
     }
 
     inline auto size() const {
