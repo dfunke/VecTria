@@ -556,20 +556,20 @@ int main() {
     ANNOTATE_DISABLE_COLLECTION_POP;
 #endif
 
-//    timeFunction(simplices_aoa_np, points_aoa);
-//    timeFunction(simplices_pa_np, points_pa);
-//
-//    timeFunction(simplices_aoa_wp, points_aoa);
-//    timeFunction(simplices_pa_wp, points_pa);
+    timeFunction(simplices_aoa_np, points_aoa);
+    timeFunction(simplices_pa_np, points_pa);
+
+    timeFunction(simplices_aoa_wp, points_aoa);
+    timeFunction(simplices_pa_wp, points_pa);
 
 #ifdef HAS_Vc
-//    timeFunction(simplices_vaoa_np, points_vaoa);
-//    timeFunction(simplices_vpa_np, points_vpa);
-//    timeFunction(simplices_vgpa_np, points_vpa);
-//
-//    timeFunction(simplices_vaoa_wp, points_vaoa);
-//    timeFunction(simplices_vpa_wp, points_vpa);
-//    timeFunction(simplices_vgpa_wp, points_vpa);
+    timeFunction(simplices_vaoa_np, points_vaoa);
+    timeFunction(simplices_vpa_np, points_vpa);
+    timeFunction(simplices_vgpa_np, points_vpa);
+
+    timeFunction(simplices_vaoa_wp, points_vaoa);
+    timeFunction(simplices_vpa_wp, points_vpa);
+    timeFunction(simplices_vgpa_wp, points_vpa);
 #endif
 
     return 0;
