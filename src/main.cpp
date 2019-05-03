@@ -377,93 +377,92 @@ void verify(const SimplexArray1 &simplices1, const PointArray1 &points1,
         if (!(s1 == s2)) {
             std::cout << "Simplices " << i << " differ: (" << s1 << ") vs (" << s2 << ")" << std::endl;
         }
+    }
 
-        if constexpr (SimplexArray2::isVectorized) {
+    if constexpr (SimplexArray2::isVectorized) {
+        // vector of indices access
+        for (Vc::Vector<tIndexType> i = Vc::Vector<tIndexType>::IndexesFromZero();
+             i.max() < simplices2.size(); i += Vc::Vector<tIndexType>(Vc::Vector<tIndexType>::size())) {
 
-            // vector of indices access
-            for (Vc::Vector<tIndexType> i = Vc::Vector<tIndexType>::IndexesFromZero();
-                 i.max() < simplices2.size(); i += Vc::Vector<tIndexType>(Vc::Vector<tIndexType>::size())) {
 
-                Vc::Vector<tIndexType> v[SimplexArray2::D + 1], n[SimplexArray2::D + 1];
+            Vc::Vector<tIndexType> v[SimplexArray2::D + 1], n[SimplexArray2::D + 1];
 
-                for (tDimType d = 0; d < SimplexArray2::D + 1; ++d) {
-                    v[d] = simplices2.vertices.vec(i, d);
-                    n[d] = simplices2.neighbors.vec(i, d);
-                }
-
-                for (std::size_t j = 0; j < Vc::Vector<tIndexType>::size(); ++j) {
-                    auto s1 = simplices1.get(i[j]);
-                    bool valid = true;
-
-                    for (tDimType d = 0; d < SimplexArray2::D + 1; ++d) {
-                        if ((s1.vertex(d) != v[d][j]) || (s1.neighbor(d) != n[d][j])) {
-                            valid = false;
-                        }
-                    }
-
-                    if (!valid) {
-                        std::cout << "Simplices " << j << ": " << i[j]
-                                  << " differ: (" << s1 << ") vs (" << "[" << v[0][j];
-
-                        for (tDimType d = 1; d < SimplexArray2::D + 1; ++d) {
-                            std::cout << ", " << v[d][j];
-
-                        }
-                        std::cout << "]";
-                        std::cout << " (" << n[0][j];
-
-                        for (tDimType d = 1; d < SimplexArray2::D + 1; ++d) {
-                            std::cout << ", " << n[d][j];
-
-                        }
-                        std::cout << ")" << ")" << std::endl;
-                    }
-                }
+            for (tDimType d = 0; d < SimplexArray2::D + 1; ++d) {
+                v[d] = simplices2.vertices.vec(i, d);
+                n[d] = simplices2.neighbors.vec(i, d);
             }
 
-            // contiguous load access
-            for (tIndexType i = 0;
-                 i + Vc::Vector<tIndexType>::size() - 1 < simplices2.size(); i += Vc::Vector<tIndexType>::size()) {
-
-                Vc::Vector<tIndexType> v[SimplexArray2::D + 1], n[SimplexArray2::D + 1];
+            for (std::size_t j = 0; j < Vc::Vector<tIndexType>::size(); ++j) {
+                auto s1 = simplices1.get(i[j]);
+                bool valid = true;
 
                 for (tDimType d = 0; d < SimplexArray2::D + 1; ++d) {
-                    v[d] = simplices2.vertices.vec(i, d);
-                    n[d] = simplices2.neighbors.vec(i, d);
+                    if ((s1.vertex(d) != v[d][j]) || (s1.neighbor(d) != n[d][j])) {
+                        valid = false;
+                    }
                 }
 
-                for (std::size_t j = 0; j < Vc::Vector<tIndexType>::size(); ++j) {
-                    auto s1 = simplices1.get(i + j);
-                    bool valid = true;
+                if (!valid) {
+                    std::cout << "Simplices " << j << ": " << i[j]
+                              << " differ: (" << s1 << ") vs (" << "[" << v[0][j];
 
-                    for (tDimType d = 0; d < SimplexArray2::D + 1; ++d) {
-                        if ((s1.vertex(d) != v[d][j]) || (s1.neighbor(d) != n[d][j])) {
-                            valid = false;
-                        }
+                    for (tDimType d = 1; d < SimplexArray2::D + 1; ++d) {
+                        std::cout << ", " << v[d][j];
+
                     }
+                    std::cout << "]";
+                    std::cout << " (" << n[0][j];
 
-                    if (!valid) {
-                        std::cout << "Simplices " << j << ": " << i + j
-                                  << " differ: (" << s1 << ") vs (" << "[" << v[0][j];
+                    for (tDimType d = 1; d < SimplexArray2::D + 1; ++d) {
+                        std::cout << ", " << n[d][j];
 
-                        for (tDimType d = 1; d < SimplexArray2::D + 1; ++d) {
-                            std::cout << ", " << v[d][j];
-
-                        }
-                        std::cout << "]";
-                        std::cout << " (" << n[0][j];
-
-                        for (tDimType d = 1; d < SimplexArray2::D + 1; ++d) {
-                            std::cout << ", " << n[d][j];
-
-                        }
-                        std::cout << ")" << ")" << std::endl;
                     }
+                    std::cout << ")" << ")" << std::endl;
+                }
+            }
+        }
+
+        // contiguous load access
+        for (tIndexType i = 0;
+             i + Vc::Vector<tIndexType>::size() - 1 < simplices2.size(); i += Vc::Vector<tIndexType>::size()) {
+
+            Vc::Vector<tIndexType> v[SimplexArray2::D + 1], n[SimplexArray2::D + 1];
+
+            for (tDimType d = 0; d < SimplexArray2::D + 1; ++d) {
+                v[d] = simplices2.vertices.vec(i, d);
+                n[d] = simplices2.neighbors.vec(i, d);
+            }
+
+            for (std::size_t j = 0; j < Vc::Vector<tIndexType>::size(); ++j) {
+                auto s1 = simplices1.get(i + j);
+                bool valid = true;
+
+                for (tDimType d = 0; d < SimplexArray2::D + 1; ++d) {
+                    if ((s1.vertex(d) != v[d][j]) || (s1.neighbor(d) != n[d][j])) {
+                        valid = false;
+                    }
+                }
+
+                if (!valid) {
+                    std::cout << "Simplices " << j << ": " << i + j
+                              << " differ: (" << s1 << ") vs (" << "[" << v[0][j];
+
+                    for (tDimType d = 1; d < SimplexArray2::D + 1; ++d) {
+                        std::cout << ", " << v[d][j];
+
+                    }
+                    std::cout << "]";
+                    std::cout << " (" << n[0][j];
+
+                    for (tDimType d = 1; d < SimplexArray2::D + 1; ++d) {
+                        std::cout << ", " << n[d][j];
+
+                    }
+                    std::cout << ")" << ")" << std::endl;
                 }
             }
         }
     }
-
 }
 
 #define D 3
@@ -504,7 +503,10 @@ int main() {
 
     Triangulator<D> triangulator;
 
+    auto t1 = std::chrono::high_resolution_clock::now();
     auto cgal_DT = triangulator.cgal(cgal_points);
+    auto t2 = std::chrono::high_resolution_clock::now();
+    std::cout << "Triangulation time: " << std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count() << std::endl;
 
     auto simplices_aoa_np = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutAoA, NoPrecomputation>>>(
             cgal_DT);
