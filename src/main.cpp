@@ -315,18 +315,25 @@ struct Checker<3, Precision> {
 };
 
 template<class SimplexArray, class PointArray>
-void timeFunction(SimplexArray &simplices, const PointArray &points) {
+void timeFunction(SimplexArray &simplices, const PointArray &points, const unsigned short reps) {
     Checker<SimplexArray::D, typename SimplexArray::Precision> checker;
 
     auto t1 = std::chrono::high_resolution_clock::now();
-    simplices.precompute(points);
+    for (uint i = 0; i < reps; ++i) {
+        simplices.precompute(points);
+    }
     auto t2 = std::chrono::high_resolution_clock::now();
-    auto tPrep = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count();
+    auto tPrep = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count() / reps;
 
     auto t3 = std::chrono::high_resolution_clock::now();
-    bool valid = checker.check(simplices, points);
+    bool valid = false;
+
+    for (uint i = 0; i < reps; ++i) {
+        valid = checker.check(simplices, points);
+    }
+
     auto t4 = std::chrono::high_resolution_clock::now();
-    auto tCheck = std::chrono::duration_cast<std::chrono::duration<double>>(t4 - t3).count();
+    auto tCheck = std::chrono::duration_cast<std::chrono::duration<double>>(t4 - t3).count() / reps;
 
     std::cout << "Layout: "
               << SimplexArray::template MemoryLayout<typename SimplexArray::Precision, SimplexArray::D>::name()
@@ -467,6 +474,7 @@ void verify(const SimplexArray1 &simplices1, const PointArray1 &points1,
 
 #define D 3
 #define Precision float
+#define REPS 10
 
 #ifdef NDEBUG
 #define N 1e6
@@ -506,7 +514,8 @@ int main() {
     auto t1 = std::chrono::high_resolution_clock::now();
     auto cgal_DT = triangulator.cgal(cgal_points);
     auto t2 = std::chrono::high_resolution_clock::now();
-    std::cout << "Triangulation time: " << std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count() << std::endl;
+    std::cout << "Triangulation time: " << std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count()
+              << std::endl;
 
     auto simplices_aoa_np = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutAoA, NoPrecomputation>>>(
             cgal_DT);
@@ -558,20 +567,20 @@ int main() {
     ANNOTATE_DISABLE_COLLECTION_POP;
 #endif
 
-    timeFunction(simplices_aoa_np, points_aoa);
-    timeFunction(simplices_pa_np, points_pa);
-
-    timeFunction(simplices_aoa_wp, points_aoa);
-    timeFunction(simplices_pa_wp, points_pa);
+//    timeFunction(simplices_aoa_np, points_aoa, REPS);
+//    timeFunction(simplices_pa_np, points_pa, REPS);
+//
+//    timeFunction(simplices_aoa_wp, points_aoa, REPS);
+//    timeFunction(simplices_pa_wp, points_pa, REPS);
 
 #ifdef HAS_Vc
-    timeFunction(simplices_vaoa_np, points_vaoa);
-    timeFunction(simplices_vpa_np, points_vpa);
-    timeFunction(simplices_vgpa_np, points_vpa);
+//    timeFunction(simplices_vaoa_np, points_vaoa, REPS);
+//    timeFunction(simplices_vpa_np, points_vpa, REPS);
+//    timeFunction(simplices_vgpa_np, points_vpa, REPS);
 
-    timeFunction(simplices_vaoa_wp, points_vaoa);
-    timeFunction(simplices_vpa_wp, points_vpa);
-    timeFunction(simplices_vgpa_wp, points_vpa);
+//    timeFunction(simplices_vaoa_wp, points_vaoa, REPS);
+//    timeFunction(simplices_vpa_wp, points_vpa, REPS);
+    timeFunction(simplices_vgpa_wp, points_vpa, REPS);
 #endif
 
     return 0;
