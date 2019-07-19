@@ -134,7 +134,13 @@ class Predicates {
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+
+#if __APPLE__
+#include "dummy_fpu_control.h"
+#else
 #include <fpu_control.h>
+#endif
+
 
 //#ifdef USE_CGAL_PREDICATES
 //  #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>

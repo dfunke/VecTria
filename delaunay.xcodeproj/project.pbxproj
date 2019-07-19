@@ -28,6 +28,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		F6914A7F22E1CCA900E58257 /* dummy_fpu_control.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = dummy_fpu_control.h; sourceTree = "<group>"; };
 		F6AB48A322442A5000EB3520 /* Datastructures.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Datastructures.h; sourceTree = "<group>"; };
 		F6CDBEC1224CB52C00A84D5E /* libCGAL.13.0.2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libCGAL.13.0.2.dylib; path = ../../../../usr/local/Cellar/cgal/4.13/lib/libCGAL.13.0.2.dylib; sourceTree = "<group>"; };
 		F6CDBEC2224CB52C00A84D5E /* libCGAL_Core.13.0.2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libCGAL_Core.13.0.2.dylib; path = ../../../../usr/local/Cellar/cgal/4.13/lib/libCGAL_Core.13.0.2.dylib; sourceTree = "<group>"; };
@@ -62,6 +63,7 @@
 		F6AB48A222442A1E00EB3520 /* includes */ = {
 			isa = PBXGroup;
 			children = (
+				F6914A7F22E1CCA900E58257 /* dummy_fpu_control.h */,
 				F6CDBEC722568E0C00A84D5E /* GeometryStructures.h */,
 				F6CDBEC922568E0C00A84D5E /* MathTools.h */,
 				F6CDBEC822568E0C00A84D5E /* Predicates.h */,
