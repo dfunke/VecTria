@@ -7,8 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		F6CDBEC3224CB52C00A84D5E /* libCGAL.13.0.2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = F6CDBEC1224CB52C00A84D5E /* libCGAL.13.0.2.dylib */; };
-		F6CDBEC4224CB52C00A84D5E /* libCGAL_Core.13.0.2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = F6CDBEC2224CB52C00A84D5E /* libCGAL_Core.13.0.2.dylib */; };
+		F60F902422E1D91400C4274E /* libCGAL.13.0.3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = F60F902322E1D91400C4274E /* libCGAL.13.0.3.dylib */; };
+		F60F902622E1D93300C4274E /* libCGAL_Core.13.0.3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = F60F902522E1D93300C4274E /* libCGAL_Core.13.0.3.dylib */; };
+		F60F902822E1D97100C4274E /* libVc.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F60F902722E1D97100C4274E /* libVc.a */; };
 		F6E52A96209B171300FF501A /* libboost_system-mt.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = F6E52A91209B171300FF501A /* libboost_system-mt.dylib */; };
 		F6E52A97209B171300FF501A /* libgmp.10.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = F6E52A92209B171300FF501A /* libgmp.10.dylib */; };
 		F6E52A98209B171300FF501A /* libboost_thread-mt.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = F6E52A93209B171300FF501A /* libboost_thread-mt.dylib */; };
@@ -28,6 +29,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		F60F902322E1D91400C4274E /* libCGAL.13.0.3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libCGAL.13.0.3.dylib; path = ../../../../usr/local/Cellar/cgal/4.14_1/lib/libCGAL.13.0.3.dylib; sourceTree = "<group>"; };
+		F60F902522E1D93300C4274E /* libCGAL_Core.13.0.3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libCGAL_Core.13.0.3.dylib; path = ../../../../usr/local/Cellar/cgal/4.14_1/lib/libCGAL_Core.13.0.3.dylib; sourceTree = "<group>"; };
+		F60F902722E1D97100C4274E /* libVc.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libVc.a; path = ../../../../usr/local/lib/libVc.a; sourceTree = "<group>"; };
 		F6914A7F22E1CCA900E58257 /* dummy_fpu_control.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = dummy_fpu_control.h; sourceTree = "<group>"; };
 		F6AB48A322442A5000EB3520 /* Datastructures.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Datastructures.h; sourceTree = "<group>"; };
 		F6CDBEC1224CB52C00A84D5E /* libCGAL.13.0.2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libCGAL.13.0.2.dylib; path = ../../../../usr/local/Cellar/cgal/4.13/lib/libCGAL.13.0.2.dylib; sourceTree = "<group>"; };
@@ -49,8 +53,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F6CDBEC3224CB52C00A84D5E /* libCGAL.13.0.2.dylib in Frameworks */,
-				F6CDBEC4224CB52C00A84D5E /* libCGAL_Core.13.0.2.dylib in Frameworks */,
+				F60F902822E1D97100C4274E /* libVc.a in Frameworks */,
+				F60F902422E1D91400C4274E /* libCGAL.13.0.3.dylib in Frameworks */,
+				F60F902622E1D93300C4274E /* libCGAL_Core.13.0.3.dylib in Frameworks */,
 				F6E52A96209B171300FF501A /* libboost_system-mt.dylib in Frameworks */,
 				F6E52A97209B171300FF501A /* libgmp.10.dylib in Frameworks */,
 				F6E52A98209B171300FF501A /* libboost_thread-mt.dylib in Frameworks */,
@@ -93,6 +98,9 @@
 		F6E52A8E209B171300FF501A /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				F60F902722E1D97100C4274E /* libVc.a */,
+				F60F902522E1D93300C4274E /* libCGAL_Core.13.0.3.dylib */,
+				F60F902322E1D91400C4274E /* libCGAL.13.0.3.dylib */,
 				F6CDBEC2224CB52C00A84D5E /* libCGAL_Core.13.0.2.dylib */,
 				F6CDBEC1224CB52C00A84D5E /* libCGAL.13.0.2.dylib */,
 				F6E52A91209B171300FF501A /* libboost_system-mt.dylib */,
@@ -284,14 +292,15 @@
 				CLANG_WARN_DOCUMENTATION_COMMENTS = NO;
 				CODE_SIGN_STYLE = Automatic;
 				GCC_C_LANGUAGE_STANDARD = c11;
+				GCC_PREPROCESSOR_DEFINITIONS = "HAS_Vc=1";
 				HEADER_SEARCH_PATHS = (
 					/usr/local/include,
 					includes,
 				);
 				LIBRARY_SEARCH_PATHS = (
 					/usr/local/lib,
-					/usr/local/Cellar/cgal/4.13/lib,
-					/usr/local/Cellar/boost/1.68.0_1/lib,
+					/usr/local/Cellar/cgal/4.14_1/lib,
+					/usr/local/Cellar/boost/1.70.0/lib,
 					/usr/local/Cellar/gmp/6.1.2_2/lib,
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -305,14 +314,15 @@
 				CLANG_WARN_DOCUMENTATION_COMMENTS = NO;
 				CODE_SIGN_STYLE = Automatic;
 				GCC_C_LANGUAGE_STANDARD = c11;
+				GCC_PREPROCESSOR_DEFINITIONS = "HAS_Vc=1";
 				HEADER_SEARCH_PATHS = (
 					/usr/local/include,
 					includes,
 				);
 				LIBRARY_SEARCH_PATHS = (
 					/usr/local/lib,
-					/usr/local/Cellar/cgal/4.13/lib,
-					/usr/local/Cellar/boost/1.68.0_1/lib,
+					/usr/local/Cellar/cgal/4.14_1/lib,
+					/usr/local/Cellar/boost/1.70.0/lib,
 					/usr/local/Cellar/gmp/6.1.2_2/lib,
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
