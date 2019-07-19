@@ -61,6 +61,7 @@ endif ()
 
 find_package(Vc)
 if (Vc_FOUND)
+    message(STATUS "VC Library found")
     include_directories(
             SYSTEM
             ${Vc_INCLUDE_DIRS}
