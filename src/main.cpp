@@ -31,6 +31,8 @@
 #include "GeometryStructures.h"
 #include "Predicates.h"
 
+#include "TextTable.h"
+
 #define SEED 1986
 
 using K = CGAL::Exact_predicates_inexact_constructions_kernel;
@@ -120,7 +122,7 @@ struct Generator<2, Precision> {
         }
 
         SearchTraits_2 traits;
-        CGAL::spatial_sort(points.begin(), points.end(), traits);
+        CGAL::hilbert_sort(points.begin(), points.end(), traits);
 
         return points;
     }
@@ -155,7 +157,7 @@ struct Generator<3, Precision> {
         }
 
         SearchTraits_3 traits;
-        CGAL::spatial_sort(points.begin(), points.end(), traits);
+        CGAL::hilbert_sort(points.begin(), points.end(), traits);
 
         return points;
     }
@@ -376,7 +378,7 @@ struct Checker<3, Precision> {
 };
 
 template<class SimplexArray, class PointArray>
-void timeFunction(SimplexArray &simplices, const PointArray &points, const unsigned short reps) {
+void timeFunction(SimplexArray &simplices, const PointArray &points, const unsigned short reps, TextTable &output) {
     Checker<SimplexArray::D, typename SimplexArray::Precision> checker;
 
     auto t1 = std::chrono::high_resolution_clock::now();
@@ -396,13 +398,13 @@ void timeFunction(SimplexArray &simplices, const PointArray &points, const unsig
     auto t4 = std::chrono::high_resolution_clock::now();
     auto tCheck = std::chrono::duration_cast<std::chrono::duration<double>>(t4 - t3).count() / reps;
 
-    std::cout << "Layout: "
-              << SimplexArray::template MemoryLayout<typename SimplexArray::Precision, SimplexArray::D>::name()
-              << " valid: " << valid
-              << " Precomp: " << (SimplexArray::hasSubdets ? std::to_string(tPrep) : "no")
-              << " Check: " << tCheck
-              << " Total: " << ((SimplexArray::hasSubdets ? tPrep : 0)) + tCheck
-              << std::endl;
+    output.add(SimplexArray::template MemoryLayout<typename SimplexArray::Precision, SimplexArray::D>::name());
+    output.add(SimplexArray::hasOppVertex ? "yes" : "no");
+    output.add(std::to_string(valid));
+    output.add(SimplexArray::hasSubdets ? std::to_string(tPrep) : "no");
+    output.add(std::to_string(tCheck));
+    output.add(std::to_string((SimplexArray::hasSubdets ? tPrep : 0) + tCheck));
+    output.endOfRow();
 
 }
 
@@ -535,7 +537,7 @@ void verify(const SimplexArray1 &simplices1, const PointArray1 &points1,
 
 #define D 3
 #define Precision float
-#define REPS 10
+#define REPS 1
 
 #ifdef NDEBUG
 #define N 1e6
