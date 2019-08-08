@@ -138,20 +138,29 @@ public:
     }
 
     inline Vc::Vector<T> vec(const Vc::Vector<tIndexType> &i, const tDimType &d) const {
+        static_assert(Vc::Vector<T>::size() == Vc::Vector<tIndexType>::size());
         return Vc::Vector<T>(base::data(), Vc::Vector<tIndexType>(D) * i + Vc::Vector<tIndexType>(d));
     }
 
     inline Vc::Vector<T> vec(const tIndexType &i, const tDimType &d) const {
+        static_assert(Vc::Vector<T>::size() == Vc::Vector<tIndexType>::size());
         return Vc::Vector<T>(base::data(), Vc::Vector<tIndexType>(D) *
                                            (Vc::Vector<tIndexType>(i) + Vc::Vector<tIndexType>::IndexesFromZero()) +
                                            Vc::Vector<tIndexType>(d));
     }
 
+    inline Vc::Vector<T> vec(const tIndexType &i) const {
+        static_assert(D <= Vc::Vector<T>::size());
+        return Vc::Vector<T>(base::data()[D * i]);
+    }
+
     inline void store(const Vc::Vector<tIndexType> &i, const tDimType &d, const Vc::Vector<T> &data) {
+        static_assert(Vc::Vector<T>::size() == Vc::Vector<tIndexType>::size());
         data.scatter(base::data(), Vc::Vector<tIndexType>(D) * i + Vc::Vector<tIndexType>(d));
     }
 
     inline void store(const tIndexType &i, const tDimType &d, const Vc::Vector<T> &data) {
+        static_assert(Vc::Vector<T>::size() == Vc::Vector<tIndexType>::size());
         data.scatter(base::data(), Vc::Vector<tIndexType>(D) *
                                    (Vc::Vector<tIndexType>(i) + Vc::Vector<tIndexType>::IndexesFromZero()) +
                                    Vc::Vector<tIndexType>(d));
@@ -163,7 +172,7 @@ public:
 
     inline void ensure(const tIndexType &i) {
         if (m_size < i) {
-            base::resize(D * (i + 1));
+            base::resize(D * (i + 1) + (D < Vc::Vector<T>::size() ? Vc::Vector<T>::size() - D : 0));
             m_size = i + 1;
         }
     }
@@ -205,6 +214,7 @@ public:
     }
 
     inline Vc::Vector<T> vec(const Vc::Vector<tIndexType> &i, const tDimType &d) const {
+        static_assert(Vc::Vector<T>::size() == Vc::Vector<tIndexType>::size());
         return Vc::Vector<T>(base::data(),
                              (i / Vc::Vector<tIndexType>(N)) * Vc::Vector<tIndexType>(ND)
                              + Vc::Vector<tIndexType>(d) * Vc::Vector<tIndexType>(N) +
@@ -212,16 +222,26 @@ public:
     }
 
     inline Vc::Vector<T> vec(const tIndexType &i, const tDimType &d) const {
+        static_assert(Vc::Vector<T>::size() == Vc::Vector<tIndexType>::size());
         return Vc::Vector<T>(&base::data()[(i / N) * ND + d * N]);
     }
 
+    inline Vc::Vector<T> vec(const tIndexType &i) const {
+        static_assert(D <= Vc::Vector<T>::size());
+        return Vc::Vector<T>(base::data(), (i / Vc::Vector<tIndexType>(N)) * Vc::Vector<tIndexType>(ND)
+                                           + Vc::Vector<tIndexType>::IndexesFromZero() * Vc::Vector<tIndexType>(N) +
+                                           i % Vc::Vector<tIndexType>(N));
+    }
+
     inline void store(const Vc::Vector<tIndexType> &i, const tDimType &d, const Vc::Vector<T> &data) {
+        static_assert(Vc::Vector<T>::size() == Vc::Vector<tIndexType>::size());
         data.scatter(base::data(), (i / Vc::Vector<tIndexType>(N)) * Vc::Vector<tIndexType>(ND)
                                    + Vc::Vector<tIndexType>(d) * Vc::Vector<tIndexType>(N) +
                                    i % Vc::Vector<tIndexType>(N));
     }
 
     inline void store(const tIndexType &i, const tDimType &d, const Vc::Vector<T> &data) {
+        static_assert(Vc::Vector<T>::size() == Vc::Vector<tIndexType>::size());
         data.store(&base::data()[(i / N) * ND + d * N]);
     }
 
@@ -231,7 +251,7 @@ public:
 
     inline void ensure(const tIndexType &i) {
         if (m_size < i) {
-            base::resize(((i / N) + 1) * ND);
+            base::resize(((i / N) + 1) * ND + (D < Vc::Vector<T>::size() ? Vc::Vector<T>::size() - D : 0));
             m_size = i + 1;
         }
     }
@@ -269,18 +289,32 @@ public:
     }
 
     inline Vc::Vector<T> vec(const Vc::Vector<tIndexType> &i, const tDimType &d) const {
+        static_assert(Vc::Vector<T>::size() == Vc::Vector<tIndexType>::size());
         return Vc::Vector<T>(base::ACCESS(d).data(), i);
     }
 
     inline Vc::Vector<T> vec(const tIndexType &i, const tDimType &d) const {
+        static_assert(Vc::Vector<T>::size() == Vc::Vector<tIndexType>::size());
         return Vc::Vector<T>(&base::ACCESS(d).data()[i]);
     }
 
+    inline Vc::Vector<T> vec(const tIndexType &i) const {
+        static_assert(D <= Vc::Vector<T>::size());
+        Vc::Vector<T> v;
+        for (tDimType d = 0; d < D; ++d) {
+            v[d] = base::ACCESS(d).ACCESS(i);
+        }
+
+        return v;
+    }
+
     inline void store(const Vc::Vector<tIndexType> &i, const tDimType &d, const Vc::Vector<T> &data) {
+        static_assert(Vc::Vector<T>::size() == Vc::Vector<tIndexType>::size());
         data.scatter(base::ACCESS(d).data(), i);
     }
 
     inline void store(const tIndexType &i, const tDimType &d, const Vc::Vector<T> &data) {
+        static_assert(Vc::Vector<T>::size() == Vc::Vector<tIndexType>::size());
         data.store(&base::ACCESS(d).data()[i]);
     }
 
