@@ -9,7 +9,8 @@
 template<tDimType pD,
         typename pPrecision,
         template<typename, tDimType> class pMemoryLayout,
-        template<class> class pPrecomputeStrategy>
+        template<class> class pPrecomputeStrategy,
+        template<class> class pOppVertex>
 struct Traits {
 
     template<typename T, tDimType D2>
@@ -17,6 +18,9 @@ struct Traits {
 
     template<class T>
     using PrecomputeStrategy = pPrecomputeStrategy<Traits>;
+
+    template<class T>
+    using OppVertex = pOppVertex<Traits>;
 
     using Precision = pPrecision;
 
@@ -139,6 +143,17 @@ public:
         return m_simplexArray.neighbors(m_idx, i);
     }
 
+    template<typename Ret = const tIndexType &>
+    inline auto oppVertex(const tDimType &i) const -> std::enable_if_t<SimplexArray::hasOppVertex, Ret> {
+        return m_simplexArray.opp_vertex(m_idx, i);
+    }
+
+    template<typename Ret = tIndexType &>
+    inline auto oppVertex(const tDimType &i) -> std::enable_if_t<
+            SimplexArray::hasOppVertex and not std::is_const_v<SimplexArray>, Ret> {
+        return m_simplexArray.opp_vertex(m_idx, i);
+    }
+
     template<class OtherSimplex>
     bool operator==(const OtherSimplex &s) const {
 
@@ -205,7 +220,30 @@ public:
 };
 
 template<class Traits>
-class SimplexArray : public Traits::template PrecomputeStrategy<Traits> {
+class NoOppVertex {
+
+public:
+
+    static constexpr bool hasOppVertex = false;
+
+};
+
+template<class Traits>
+class WithOppVertex {
+
+public:
+    template<typename T, tDimType D2>
+    using MemoryLayout = typename Traits::template MemoryLayout<T, D2>;
+
+    static constexpr tDimType D = Traits::D;
+    static constexpr bool hasOppVertex = true;
+
+public:
+    MemoryLayout<tIndexType, D + 1> opp_vertex;
+};
+
+template<class Traits>
+class SimplexArray : public Traits::template PrecomputeStrategy<Traits>, public Traits::template OppVertex<Traits> {
 
 public:
     template<typename T, tDimType D2>
@@ -214,6 +252,7 @@ public:
     using Precision = typename Traits::Precision;
     static constexpr tDimType D = Traits::D;
     static constexpr bool isVectorized = MemoryLayout<tIndexType, D + 1>::isVectorized;
+    static constexpr bool hasOppVertex = Traits::template OppVertex<Traits>::hasOppVertex;
 
 public:
     MemoryLayout<tIndexType, D + 1> vertices;
@@ -221,7 +260,8 @@ public:
 
 private:
 
-    using base = typename Traits::template PrecomputeStrategy<Traits>;
+    using pcBase = typename Traits::template PrecomputeStrategy<Traits>;
+    using ovBase = typename Traits::template OppVertex<Traits>;
     using tSimplex = Simplex<D, SimplexArray>;
     using tcSimplex = Simplex<D, const SimplexArray>;
 
@@ -230,11 +270,19 @@ public:
     void ensure(const tIndexType &i) {
         vertices.ensure(i);
         neighbors.ensure(i);
+
+        if constexpr (hasOppVertex) {
+            ovBase::opp_vertex.ensure(i);
+        }
     }
 
     void ensure(const tIndexType &i) const {
         vertices.ensure(i);
         neighbors.ensure(i);
+
+        if constexpr (hasOppVertex) {
+            ovBase::opp_vertex.ensure(i);
+        }
     }
 
     tIndexType size() const {
@@ -251,6 +299,6 @@ public:
 
     template<class PointArray>
     void precompute(const PointArray &points) {
-        base::precompute(*this, points);
+        pcBase::precompute(*this, points);
     }
 };

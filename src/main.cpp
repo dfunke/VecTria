@@ -208,6 +208,15 @@ struct Triangulator<2> {
             s.neighbor(0) = T.is_infinite(it->neighbor(0)) ? INF : it->neighbor(0)->info();
             s.neighbor(1) = T.is_infinite(it->neighbor(1)) ? INF : it->neighbor(1)->info();
             s.neighbor(2) = T.is_infinite(it->neighbor(2)) ? INF : it->neighbor(2)->info();
+
+            if constexpr (SimplexArray::hasOppVertex) {
+                s.oppVertex(0) = T.is_infinite(it->neighbor(0)) ? INF : it->neighbor(0)->vertex(
+                        it->neighbor(0)->index(it))->info();
+                s.oppVertex(1) = T.is_infinite(it->neighbor(1)) ? INF : it->neighbor(1)->vertex(
+                        it->neighbor(1)->index(it))->info();
+                s.oppVertex(2) = T.is_infinite(it->neighbor(2)) ? INF : it->neighbor(2)->vertex(
+                        it->neighbor(2)->index(it))->info();
+            }
         }
 
         return simplices;
@@ -249,6 +258,18 @@ struct Triangulator<3> {
             s.neighbor(1) = T.is_infinite(it->neighbor(1)) ? INF : it->neighbor(1)->info();
             s.neighbor(2) = T.is_infinite(it->neighbor(2)) ? INF : it->neighbor(2)->info();
             s.neighbor(3) = T.is_infinite(it->neighbor(3)) ? INF : it->neighbor(3)->info();
+
+
+            if constexpr (SimplexArray::hasOppVertex) {
+                s.oppVertex(0) = T.is_infinite(it->neighbor(0)) ? INF : it->neighbor(0)->vertex(
+                        it->neighbor(0)->index(it))->info();
+                s.oppVertex(1) = T.is_infinite(it->neighbor(1)) ? INF : it->neighbor(1)->vertex(
+                        it->neighbor(1)->index(it))->info();
+                s.oppVertex(2) = T.is_infinite(it->neighbor(2)) ? INF : it->neighbor(2)->vertex(
+                        it->neighbor(2)->index(it))->info();
+                s.oppVertex(3) = T.is_infinite(it->neighbor(3)) ? INF : it->neighbor(3)->vertex(
+                        it->neighbor(3)->index(it))->info();
+            }
         }
 
         return simplices;
@@ -270,39 +291,79 @@ struct Checker<3, Precision> {
         bool valid = true;
 
         if constexpr (SimplexArray::isVectorized) {
-            for (tIndexType i = 0;
-                 i + Vc::Vector<tIndexType>::size() - 1 < simplices.size(); i += Vc::Vector<tIndexType>::size()) {
 
-                for (tDimType d = 0; d < D + 1; ++d) {
+            if constexpr (SimplexArray::hasOppVertex) {
+                for (tIndexType i = 0;
+                     i + Vc::Vector<tIndexType>::size() - 1 < simplices.size(); i += Vc::Vector<tIndexType>::size()) {
+                    for (tDimType d = 0; d < D + 1; ++d) {
 
-                    auto neighbors = simplices.neighbors.vec(i, d);
-                    auto mask = neighbors == INF;
-                    neighbors(mask) = 0;
+                        auto p = simplices.opp_vertex.vec(i, d);
+                        auto mask = p == INF;
+                        p(mask) = 0;
 
-                    for (tDimType d2 = 0; d2 < D + 1; ++d2) {
-
-                        auto p = simplices.vertices.vec(neighbors, d2);
                         auto det = insphere_fast<D, Precision>(i, p, simplices, points);
 
+                        static_assert(Vc::Vector<tIndexType>::size() == Vc::Vector<Precision>::size());
                         if (Vc::any_of((det < 0) & !Vc::simd_cast<Vc::Mask<Precision>>(mask))) {
                             valid = false;
                         }
                     }
                 }
+            } else {
+
+                for (tIndexType i = 0;
+                     i + Vc::Vector<tIndexType>::size() - 1 < simplices.size(); i += Vc::Vector<tIndexType>::size()) {
+
+                    for (tDimType d = 0; d < D + 1; ++d) {
+
+                        auto neighbors = simplices.neighbors.vec(i, d);
+                        auto mask = neighbors == INF;
+                        neighbors(mask) = 0;
+
+                        for (tDimType d2 = 0; d2 < D + 1; ++d2) {
+
+                            auto p = simplices.vertices.vec(neighbors, d2);
+                            auto det = insphere_fast<D, Precision>(i, p, simplices, points);
+
+                            if (Vc::any_of((det < 0) & !Vc::simd_cast<Vc::Mask<Precision>>(mask))) {
+                                valid = false;
+                            }
+                        }
+                    }
+                }
             }
+
         } else {
-            for (tIndexType i = 0; i < simplices.size(); ++i) {
-                auto s = simplices.get(i);
 
-                for (tDimType n = 0; n < D + 1; ++n) {
-                    if (s.neighbor(n) != INF) {
-                        auto sn = simplices.get(n);
+            if constexpr (SimplexArray::hasOppVertex) {
+                for (tIndexType i = 0; i < simplices.size(); ++i) {
+                    for (tDimType d = 0; d < D + 1; ++d) {
 
-                        for (tDimType j = 0; j < D + 1; ++j) {
-                            Precision det = insphere_fast<D, Precision>(i, sn.vertex(j), simplices, points);
+                        auto p = simplices.opp_vertex(i, d);
+
+                        if (p != INF) {
+                            auto det = insphere_fast<D, Precision>(i, p, simplices, points);
 
                             if (det < 0) {
                                 valid = false;
+                            }
+                        }
+                    }
+                }
+            } else {
+                for (tIndexType i = 0; i < simplices.size(); ++i) {
+                    auto s = simplices.get(i);
+
+                    for (tDimType n = 0; n < D + 1; ++n) {
+                        if (s.neighbor(n) != INF) {
+                            auto sn = simplices.get(n);
+
+                            for (tDimType j = 0; j < D + 1; ++j) {
+                                Precision det = insphere_fast<D, Precision>(i, sn.vertex(j), simplices, points);
+
+                                if (det < 0) {
+                                    valid = false;
+                                }
                             }
                         }
                     }
@@ -495,17 +556,17 @@ int main() {
     Generator<D, Precision> generator;
     auto cgal_points = generator.generate(N);
 
-    PointArray<Traits<D, Precision, MemoryLayoutAoA, NoPrecomputation>> points_aoa;
+    PointArray<Traits<D, Precision, MemoryLayoutAoA, NoPrecomputation, NoOppVertex>> points_aoa;
     generator.convert(points_aoa, cgal_points);
 
-    PointArray<Traits<D, Precision, MemoryLayoutPA, NoPrecomputation>> points_pa;
+    PointArray<Traits<D, Precision, MemoryLayoutPA, NoPrecomputation, NoOppVertex>> points_pa;
     generator.convert(points_pa, cgal_points);
 
 #ifdef HAS_Vc
-    PointArray<Traits<D, Precision, MemoryLayoutVectorizedAoA, NoPrecomputation>> points_vaoa;
+    PointArray<Traits<D, Precision, MemoryLayoutVectorizedAoA, NoPrecomputation, NoOppVertex>> points_vaoa;
     generator.convert(points_vaoa, cgal_points);
 
-    PointArray<Traits<D, Precision, MemoryLayoutVectorizedPA, NoPrecomputation>> points_vpa;
+    PointArray<Traits<D, Precision, MemoryLayoutVectorizedPA, NoPrecomputation, NoOppVertex>> points_vpa;
     generator.convert(points_vpa, cgal_points);
 #endif
 
@@ -517,46 +578,54 @@ int main() {
     std::cout << "Triangulation time: " << std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count()
               << std::endl;
 
-    auto simplices_aoa_np = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutAoA, NoPrecomputation>>>(
+    auto simplices_aoa_np = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutAoA, NoPrecomputation, NoOppVertex>>>(
             cgal_DT);
-    auto simplices_pa_np = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutPA, NoPrecomputation>>>(
-            cgal_DT);
-
-    auto simplices_aoa_wp = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutAoA, PrecomputeSubDets>>>(
-            cgal_DT);
-    auto simplices_pa_wp = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutPA, PrecomputeSubDets>>>(
+    auto simplices_pa_np = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutPA, NoPrecomputation, NoOppVertex>>>(
             cgal_DT);
 
-#ifdef HAS_Vc
-    auto simplices_vaoa_np = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutVectorizedAoA, NoPrecomputation>>>(
+    auto simplices_aoa_wp = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutAoA, PrecomputeSubDets, NoOppVertex>>>(
             cgal_DT);
-    auto simplices_vpa_np = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutVectorizedPA, NoPrecomputation>>>(
-            cgal_DT);
-    auto simplices_vgpa_np = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutVectorizedGroupedPA, NoPrecomputation>>>(
+    auto simplices_pa_wp = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutPA, PrecomputeSubDets, NoOppVertex>>>(
             cgal_DT);
 
-    auto simplices_vaoa_wp = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutVectorizedAoA, PrecomputeSubDets>>>(
+    auto simplices_aoa_np_opp = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutAoA, NoPrecomputation, WithOppVertex>>>(
             cgal_DT);
-    auto simplices_vpa_wp = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutVectorizedPA, PrecomputeSubDets>>>(
+    auto simplices_pa_np_opp = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutPA, NoPrecomputation, WithOppVertex>>>(
             cgal_DT);
-    auto simplices_vgpa_wp = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutVectorizedGroupedPA, PrecomputeSubDets>>>(
-            cgal_DT);
-#endif
 
-    verify(simplices_aoa_np, points_aoa, simplices_aoa_np, points_aoa);
-    verify(simplices_aoa_np, points_aoa, simplices_pa_np, points_pa);
-
-    verify(simplices_aoa_np, points_aoa, simplices_aoa_wp, points_aoa);
-    verify(simplices_aoa_np, points_aoa, simplices_pa_wp, points_pa);
+    auto simplices_aoa_wp_opp = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutAoA, PrecomputeSubDets, WithOppVertex>>>(
+            cgal_DT);
+    auto simplices_pa_wp_opp = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutPA, PrecomputeSubDets, WithOppVertex>>>(
+            cgal_DT);
 
 #ifdef HAS_Vc
-    verify(simplices_aoa_np, points_aoa, simplices_vaoa_np, points_vaoa);
-    verify(simplices_aoa_np, points_aoa, simplices_vpa_np, points_vpa);
-    verify(simplices_aoa_np, points_aoa, simplices_vgpa_np, points_vpa);
+    auto simplices_vaoa_np = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutVectorizedAoA, NoPrecomputation, NoOppVertex>>>(
+            cgal_DT);
+    auto simplices_vpa_np = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutVectorizedPA, NoPrecomputation, NoOppVertex>>>(
+            cgal_DT);
+    auto simplices_vgpa_np = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutVectorizedGroupedPA, NoPrecomputation, NoOppVertex>>>(
+            cgal_DT);
 
-    verify(simplices_aoa_np, points_aoa, simplices_vaoa_wp, points_vaoa);
-    verify(simplices_aoa_np, points_aoa, simplices_vpa_wp, points_vpa);
-    verify(simplices_aoa_np, points_aoa, simplices_vgpa_wp, points_vpa);
+    auto simplices_vaoa_wp = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutVectorizedAoA, PrecomputeSubDets, NoOppVertex>>>(
+            cgal_DT);
+    auto simplices_vpa_wp = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutVectorizedPA, PrecomputeSubDets, NoOppVertex>>>(
+            cgal_DT);
+    auto simplices_vgpa_wp = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutVectorizedGroupedPA, PrecomputeSubDets, NoOppVertex>>>(
+            cgal_DT);
+
+    auto simplices_vaoa_np_opp = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutVectorizedAoA, NoPrecomputation, WithOppVertex>>>(
+            cgal_DT);
+    auto simplices_vpa_np_opp = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutVectorizedPA, NoPrecomputation, WithOppVertex>>>(
+            cgal_DT);
+    auto simplices_vgpa_np_opp = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutVectorizedGroupedPA, NoPrecomputation, WithOppVertex>>>(
+            cgal_DT);
+
+    auto simplices_vaoa_wp_opp = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutVectorizedAoA, PrecomputeSubDets, WithOppVertex>>>(
+            cgal_DT);
+    auto simplices_vpa_wp_opp = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutVectorizedPA, PrecomputeSubDets, WithOppVertex>>>(
+            cgal_DT);
+    auto simplices_vgpa_wp_opp = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutVectorizedGroupedPA, PrecomputeSubDets, WithOppVertex>>>(
+            cgal_DT);
 #endif
 
 #ifdef HAS_VTUNE
@@ -567,21 +636,46 @@ int main() {
     ANNOTATE_DISABLE_COLLECTION_POP;
 #endif
 
-//    timeFunction(simplices_aoa_np, points_aoa, REPS);
-//    timeFunction(simplices_pa_np, points_pa, REPS);
-//
-//    timeFunction(simplices_aoa_wp, points_aoa, REPS);
-//    timeFunction(simplices_pa_wp, points_pa, REPS);
+    TextTable output;
+    output.add("Layout");
+    output.add("OppVertex");
+    output.add("valid");
+    output.add("Precomp");
+    output.add("Check");
+    output.add("Total");
+    output.endOfRow();
+
+    timeFunction(simplices_aoa_np, points_aoa, REPS, output);
+    timeFunction(simplices_pa_np, points_pa, REPS, output);
+
+    timeFunction(simplices_aoa_wp, points_aoa, REPS, output);
+    timeFunction(simplices_pa_wp, points_pa, REPS, output);
+
+    timeFunction(simplices_aoa_np_opp, points_aoa, REPS, output);
+    timeFunction(simplices_pa_np_opp, points_pa, REPS, output);
+
+    timeFunction(simplices_aoa_wp_opp, points_aoa, REPS, output);
+    timeFunction(simplices_pa_wp_opp, points_pa, REPS, output);
 
 #ifdef HAS_Vc
-//    timeFunction(simplices_vaoa_np, points_vaoa, REPS);
-//    timeFunction(simplices_vpa_np, points_vpa, REPS);
-//    timeFunction(simplices_vgpa_np, points_vpa, REPS);
+    timeFunction(simplices_vaoa_np, points_vaoa, REPS, output);
+    timeFunction(simplices_vpa_np, points_vpa, REPS, output);
+    timeFunction(simplices_vgpa_np, points_vpa, REPS, output);
 
-//    timeFunction(simplices_vaoa_wp, points_vaoa, REPS);
-//    timeFunction(simplices_vpa_wp, points_vpa, REPS);
-    timeFunction(simplices_vgpa_wp, points_vpa, REPS);
+    timeFunction(simplices_vaoa_wp, points_vaoa, REPS, output);
+    timeFunction(simplices_vpa_wp, points_vpa, REPS, output);
+    timeFunction(simplices_vgpa_wp, points_vpa, REPS, output);
+
+    timeFunction(simplices_vaoa_np_opp, points_vaoa, REPS, output);
+    timeFunction(simplices_vpa_np_opp, points_vpa, REPS, output);
+    timeFunction(simplices_vgpa_np_opp, points_vpa, REPS, output);
+
+    timeFunction(simplices_vaoa_wp_opp, points_vaoa, REPS, output);
+    timeFunction(simplices_vpa_wp_opp, points_vpa, REPS, output);
+    timeFunction(simplices_vgpa_wp_opp, points_vpa, REPS, output);
 #endif
+
+    std::cout << output;
 
     return 0;
 
