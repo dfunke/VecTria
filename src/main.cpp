@@ -537,12 +537,13 @@ void verify(const SimplexArray1 &simplices1, const PointArray1 &points1,
 
 #define D 3
 #define Precision float
-#define REPS 1
 
 #ifdef NDEBUG
 #define N 1e6
+#define REPS 5
 #else
 #define N 1e2
+#define REPS 1
 #endif
 
 int main() {
