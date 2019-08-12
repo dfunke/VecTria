@@ -75,6 +75,7 @@ public:
 
     using Precision = typename Traits::Precision;
     static constexpr tDimType D = Traits::D;
+    static constexpr bool isVectorized = MemoryLayout<tIndexType, D + 1>::isVectorized;
 
 public:
     MemoryLayout<Precision, D> coords;
@@ -103,6 +104,30 @@ public:
 
     tcPoint get(const tIndexType &i) const {
         return tcPoint(*this, i);
+    }
+
+    MemoryLayout<Precision, D> getDelta(const PointArray &b) const {
+        assert(coords.size() == b.size());
+
+        MemoryLayout<Precision, D> delta;
+        delta.ensure(coords.size());
+
+        if constexpr (isVectorized) {
+            for (tIndexType i = 0;
+                 i + Vc::Vector<tIndexType>::size() - 1 < coords.size(); i += Vc::Vector<tIndexType>::size()) {
+                for (tDimType d = 0; d < D; ++d) {
+                    delta.store(i, d, b.coords.vec(i, d) - coords.vec(i, d));
+                }
+            }
+        } else {
+            for (tIndexType i = 0; i < coords.size(); ++i) {
+                for (tDimType d = 0; d < D; ++d) {
+                    delta(i, d) = b.coords(i, d) - coords(i, d);
+                }
+            }
+        }
+
+        return delta;
     }
 
 };

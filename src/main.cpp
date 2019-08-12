@@ -30,6 +30,7 @@
 
 #include "GeometryStructures.h"
 #include "Predicates.h"
+#include "FileReader.h"
 
 #include "TextTable.h"
 
@@ -378,7 +379,8 @@ struct Checker<3, Precision> {
 };
 
 template<class SimplexArray, class PointArray>
-void timeFunction(SimplexArray &simplices, const PointArray &points, const unsigned short reps, TextTable &output) {
+void
+timeValidityCheck(SimplexArray &simplices, const PointArray &points, const unsigned short reps, TextTable &output) {
     Checker<SimplexArray::D, typename SimplexArray::Precision> checker;
 
     auto t1 = std::chrono::high_resolution_clock::now();
@@ -404,6 +406,54 @@ void timeFunction(SimplexArray &simplices, const PointArray &points, const unsig
     output.add(SimplexArray::hasSubdets ? std::to_string(tPrep) : "no");
     output.add(std::to_string(tCheck));
     output.add(std::to_string((SimplexArray::hasSubdets ? tPrep : 0) + tCheck));
+    output.endOfRow();
+
+}
+
+template<class PointArray>
+void timeDeltaCalc(TextTable &output) {
+
+    FileReader<PointArray::D, typename PointArray::Precision> freader;
+    PointArray p1, p2;
+
+    const std::string DIR = "/home/funke/devel/KineticDelaunay/data/crack/";
+
+    std::filesystem::path p(DIR);
+    std::filesystem::directory_iterator start(p);
+    std::filesystem::directory_iterator end;
+
+    std::vector<std::filesystem::path> files;
+    std::copy(start, end, std::back_inserter(files));
+    std::sort(files.begin(), files.end());
+
+    freader.read(files[0], p1);
+
+    double time = 0;
+    double avgDelta = 0;
+
+    for (uint i = 1; i < files.size(); ++i) {
+        freader.read(files[i], p2);
+
+        auto t1 = std::chrono::high_resolution_clock::now();
+        auto delta = p1.getDelta(p2);
+        auto t2 = std::chrono::high_resolution_clock::now();
+
+        time += std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count();
+
+        double avg = 0;
+        for (tIndexType i = 0; i < delta.size(); ++i) {
+            for (tDimType d = 0; d < PointArray::D; ++d) {
+                avg += delta(i, d);
+            }
+        }
+        avgDelta += avg / (PointArray::D * delta.size());
+
+        p1 = p2;
+    }
+
+    output.add(PointArray::template MemoryLayout<typename PointArray::Precision, PointArray::D>::name());
+    output.add(std::to_string(time));
+    output.add(std::to_string(avgDelta));
     output.endOfRow();
 
 }
@@ -648,34 +698,53 @@ int main() {
     output.add("Total");
     output.endOfRow();
 
-    timeFunction(simplices_aoa_np, points_aoa, REPS, output);
-    timeFunction(simplices_pa_np, points_pa, REPS, output);
+//    timeValidityCheck(simplices_aoa_np, points_aoa, REPS, output);
+//    timeValidityCheck(simplices_pa_np, points_pa, REPS, output);
+//
+//    timeValidityCheck(simplices_aoa_wp, points_aoa, REPS, output);
+//    timeValidityCheck(simplices_pa_wp, points_pa, REPS, output);
+//
+//    timeValidityCheck(simplices_aoa_np_opp, points_aoa, REPS, output);
+//    timeValidityCheck(simplices_pa_np_opp, points_pa, REPS, output);
+//
+//    timeValidityCheck(simplices_aoa_wp_opp, points_aoa, REPS, output);
+//    timeValidityCheck(simplices_pa_wp_opp, points_pa, REPS, output);
+//
+//#ifdef HAS_Vc
+//    timeValidityCheck(simplices_vaoa_np, points_vaoa, REPS, output);
+//    timeValidityCheck(simplices_vpa_np, points_vpa, REPS, output);
+//    timeValidityCheck(simplices_vgpa_np, points_vpa, REPS, output);
+//
+//    timeValidityCheck(simplices_vaoa_wp, points_vaoa, REPS, output);
+//    timeValidityCheck(simplices_vpa_wp, points_vpa, REPS, output);
+//    timeValidityCheck(simplices_vgpa_wp, points_vpa, REPS, output);
+//
+//    timeValidityCheck(simplices_vaoa_np_opp, points_vaoa, REPS, output);
+//    timeValidityCheck(simplices_vpa_np_opp, points_vpa, REPS, output);
+//    timeValidityCheck(simplices_vgpa_np_opp, points_vpa, REPS, output);
+//
+//    timeValidityCheck(simplices_vaoa_wp_opp, points_vaoa, REPS, output);
+//    timeValidityCheck(simplices_vpa_wp_opp, points_vpa, REPS, output);
+//    timeValidityCheck(simplices_vgpa_wp_opp, points_vpa, REPS, output);
+//#endif
 
-    timeFunction(simplices_aoa_wp, points_aoa, REPS, output);
-    timeFunction(simplices_pa_wp, points_pa, REPS, output);
+    std::cout << output;
 
-    timeFunction(simplices_aoa_np_opp, points_aoa, REPS, output);
-    timeFunction(simplices_pa_np_opp, points_pa, REPS, output);
 
-    timeFunction(simplices_aoa_wp_opp, points_aoa, REPS, output);
-    timeFunction(simplices_pa_wp_opp, points_pa, REPS, output);
+    output.clear();
+    output.add("Layout");
+    output.add("Time");
+    output.add("AvgDelta");
+    output.endOfRow();
+
+    timeDeltaCalc<PointArray<Traits<D, Precision, MemoryLayoutPA, NoPrecomputation, NoOppVertex>>>(output);
+    timeDeltaCalc<PointArray<Traits<D, Precision, MemoryLayoutAoA, NoPrecomputation, NoOppVertex>>>(output);
 
 #ifdef HAS_Vc
-    timeFunction(simplices_vaoa_np, points_vaoa, REPS, output);
-    timeFunction(simplices_vpa_np, points_vpa, REPS, output);
-    timeFunction(simplices_vgpa_np, points_vpa, REPS, output);
-
-    timeFunction(simplices_vaoa_wp, points_vaoa, REPS, output);
-    timeFunction(simplices_vpa_wp, points_vpa, REPS, output);
-    timeFunction(simplices_vgpa_wp, points_vpa, REPS, output);
-
-    timeFunction(simplices_vaoa_np_opp, points_vaoa, REPS, output);
-    timeFunction(simplices_vpa_np_opp, points_vpa, REPS, output);
-    timeFunction(simplices_vgpa_np_opp, points_vpa, REPS, output);
-
-    timeFunction(simplices_vaoa_wp_opp, points_vaoa, REPS, output);
-    timeFunction(simplices_vpa_wp_opp, points_vpa, REPS, output);
-    timeFunction(simplices_vgpa_wp_opp, points_vpa, REPS, output);
+    timeDeltaCalc<PointArray<Traits<D, Precision, MemoryLayoutVectorizedPA, NoPrecomputation, NoOppVertex>>>(output);
+    timeDeltaCalc<PointArray<Traits<D, Precision, MemoryLayoutVectorizedGroupedPA, NoPrecomputation, NoOppVertex>>>(
+            output);
+    timeDeltaCalc<PointArray<Traits<D, Precision, MemoryLayoutVectorizedAoA, NoPrecomputation, NoOppVertex>>>(output);
 #endif
 
     std::cout << output;
