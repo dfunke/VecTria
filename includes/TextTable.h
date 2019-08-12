@@ -12,10 +12,12 @@ public:
     };
     typedef std::vector<std::string> Row;
 
-    TextTable(char horizontal = '-', char vertical = '|', char corner = '+', bool ruler = false) :
+    TextTable(char horizontal = '-', char vertical = '|', char corner = '+', bool headerSep = true, bool ruler = false)
+            :
             _horizontal(horizontal),
             _vertical(vertical),
             _corner(corner),
+            _headerSep(headerSep),
             _ruler(ruler) {}
 
     void setAlignment(unsigned i, Alignment alignment) {
@@ -59,6 +61,11 @@ public:
         setupAlignment();
     }
 
+    void clear() {
+        _rows.clear();
+        _current.assign(0, "");
+    }
+
     std::string ruler() const {
         std::string result;
         result += _corner;
@@ -68,6 +75,10 @@ public:
         }
 
         return result;
+    }
+
+    bool headerSep() const {
+        return _headerSep;
     }
 
     bool lineRuler() const {
@@ -80,6 +91,7 @@ private:
     char _horizontal;
     char _vertical;
     char _corner;
+    bool _headerSep;
     bool _ruler;
     Row _current;
     std::vector<Row> _rows;
@@ -130,7 +142,7 @@ std::ostream &operator<<(std::ostream &stream, TextTable const &table) {
         }
         stream << "\n";
 
-        if (table.lineRuler()) {
+        if (table.lineRuler() || (rowIterator == table.rows().begin() && table.headerSep())) {
             stream << table.ruler() << "\n";
         }
     }
