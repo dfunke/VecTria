@@ -184,6 +184,8 @@ struct Triangulator<2> {
 
     auto cgal(const Points_2 &P) {
 
+
+
         DT_2 T(P.begin(), P.end());
 
         return T;
@@ -630,6 +632,13 @@ int main() {
     auto t2 = std::chrono::high_resolution_clock::now();
     std::cout << "Triangulation time: " << std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count()
               << std::endl;
+
+    t1 = std::chrono::high_resolution_clock::now();
+    auto b = cgal_DT.is_valid();
+    t2 = std::chrono::high_resolution_clock::now();
+    std::cout << "CGAL verification time: " << std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count()
+              << " is " << (b ? "" : "NOT ") << "valid" << std::endl;
+
 
     auto simplices_aoa_np = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutAoA, NoPrecomputation, NoOppVertex>>>(
             cgal_DT);
