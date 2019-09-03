@@ -1,6 +1,7 @@
 add_executable(main
         main.cpp
-        Predicates.cpp)
+        Predicates.cpp
+        )
 
 target_link_libraries(main
         stdc++fs)

@@ -2,20 +2,6 @@
 
 #include "Datastructures.h"
 
-template<tDimType D, typename Precision>
-class Predicates {
-
-    public:
-        static Precision orient(const Precision *pa, const Precision *pb, const Precision *pc);
-
-        static Precision orient(const Precision *pa, const Precision *pb, const Precision *pc, const Precision *pd);
-
-        static Precision insphere(const Precision *pa, const Precision *pb, const Precision *pc, const Precision *pd);
-
-        static Precision insphere(const Precision *pa, const Precision *pb, const Precision *pc, const Precision *pd, const Precision *pe);
-
-};
-
 /*****************************************************************************/
 /*                                                                           */
 /*  Routines for Arbitrary Precision Floating-point Arithmetic               */
@@ -1161,14 +1147,6 @@ protected:
         }
         return Q;
     }
-};
-
-template<typename Precision>
-class Predicates<2, Precision> : public PredicatesBase<Precision> {
-
-    typedef PredicatesBase<Precision> super;
-
-public:
 
 /*****************************************************************************/
 /*                                                                           */
@@ -2357,16 +2335,6 @@ public:
 
         return insphere_adapt(pa, pb, pc, pd, permanent);
     }
-
-};
-
-template<typename Precision>
-class Predicates<3, Precision> : public PredicatesBase<Precision> {
-
-    typedef PredicatesBase<Precision> super;
-
-
-public:
 
 /*****************************************************************************/
 /*                                                                           */
@@ -3738,7 +3706,7 @@ public:
 
     static Precision insphere_adapt(const Precision *pa, const Precision *pb, const Precision *pc, const Precision *pd,
                                     const Precision *pe,
-                                    Precision permanent) {
+                                    const Precision permanent) {
         INEXACT Precision aex, bex, cex, dex, aey, bey, cey, dey, aez, bez, cez, dez;
         Precision det, errbound;
 
@@ -3988,10 +3956,12 @@ public:
         bex = pb[0] - pe[0];
         cex = pc[0] - pe[0];
         dex = pd[0] - pe[0];
+
         aey = pa[1] - pe[1];
         bey = pb[1] - pe[1];
         cey = pc[1] - pe[1];
         dey = pd[1] - pe[1];
+
         aez = pa[2] - pe[2];
         bez = pb[2] - pe[2];
         cez = pc[2] - pe[2];
@@ -4000,12 +3970,15 @@ public:
         aexbey = aex * bey;
         bexaey = bex * aey;
         ab = aexbey - bexaey;
+
         bexcey = bex * cey;
         cexbey = cex * bey;
         bc = bexcey - cexbey;
+
         cexdey = cex * dey;
         dexcey = dex * cey;
         cd = cexdey - dexcey;
+
         dexaey = dex * aey;
         aexdey = aex * dey;
         da = dexaey - aexdey;
@@ -4013,6 +3986,7 @@ public:
         aexcey = aex * cey;
         cexaey = cex * aey;
         ac = aexcey - cexaey;
+
         bexdey = bex * dey;
         dexbey = dex * bey;
         bd = bexdey - dexbey;

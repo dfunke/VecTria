@@ -29,7 +29,7 @@
 #endif
 
 #include "GeometryStructures.h"
-#include "Predicates.h"
+//#include "Predicates.h"
 #include "FileReader.h"
 
 #include "TextTable.h"
@@ -185,7 +185,6 @@ struct Triangulator<2> {
     auto cgal(const Points_2 &P) {
 
 
-
         DT_2 T(P.begin(), P.end());
 
         return T;
@@ -306,7 +305,7 @@ struct Checker<3, Precision> {
                         auto mask = p == INF;
                         p(mask) = 0;
 
-                        auto det = insphere_fast<D, Precision>(i, p, simplices, points);
+                        auto det = Predicates<Precision>::insphere_fast(i, p, simplices, points);
 
                         static_assert(Vc::Vector<tIndexType>::size() == Vc::Vector<Precision>::size());
                         if (Vc::any_of((det < 0) & !Vc::simd_cast<Vc::Mask<Precision>>(mask))) {
@@ -328,7 +327,7 @@ struct Checker<3, Precision> {
                         for (tDimType d2 = 0; d2 < D + 1; ++d2) {
 
                             auto p = simplices.vertices.vec(neighbors, d2);
-                            auto det = insphere_fast<D, Precision>(i, p, simplices, points);
+                            auto det = Predicates<Precision>::insphere_fast(i, p, simplices, points);
 
                             if (Vc::any_of((det < 0) & !Vc::simd_cast<Vc::Mask<Precision>>(mask))) {
                                 valid = false;
@@ -347,15 +346,26 @@ struct Checker<3, Precision> {
                         auto p = simplices.opp_vertex(i, d);
 
                         if (p != INF) {
-                            auto det = insphere_fast<D, Precision>(i, p, simplices, points);
+                            auto[det, permanent] = Predicates<Precision>::insphere(i, p, simplices, points);
 
-                            if (det < 0) {
+                            if (!Predicates<Precision>::isFinal(det, permanent)) {
+                                std::cout << "adapt called" << std::endl;
+                                det = Predicates<Precision>::insphere_adapt(permanent, i, p, simplices, points);
+                            }
+
+                            det = Predicates<Precision>::pred_orient(i, simplices, points) *
+                                  Predicates<Precision>::pred_insphere(i, p, simplices, points);
+
+                            if (det >= 0) {
+//                                std::cout << "invalid" << std::endl;
                                 valid = false;
                             }
                         }
                     }
                 }
             } else {
+                uint inv = 0;
+                uint val = 0;
                 for (tIndexType i = 0; i < simplices.size(); ++i) {
                     auto s = simplices.get(i);
 
@@ -364,15 +374,31 @@ struct Checker<3, Precision> {
                             auto sn = simplices.get(n);
 
                             for (tDimType j = 0; j < D + 1; ++j) {
-                                Precision det = insphere_fast<D, Precision>(i, sn.vertex(j), simplices, points);
+                                auto[det, permanent] = Predicates<Precision>::insphere(i, sn.vertex(j), simplices,
+                                                                                       points);
+
+                                if (!Predicates<Precision>::isFinal(det, permanent)) {
+                                    std::cout << "adapt called" << std::endl;
+                                    det = Predicates<Precision>::insphere_adapt(permanent, i, sn.vertex(j), simplices,
+                                                                                points);
+                                }
+
+                                det = Predicates<Precision>::pred_orient(i, simplices, points) *
+                                      Predicates<Precision>::pred_insphere(i, sn.vertex(j), simplices, points);
 
                                 if (det < 0) {
+//                                    std::cout << "invalid" << std::endl;
+                                    ++inv;
                                     valid = false;
+                                } else {
+                                    ++val;
                                 }
                             }
                         }
                     }
                 }
+
+                std::cout << "valid: " << val << " invalid: " << inv << std::endl;
             }
         }
 
@@ -592,7 +618,7 @@ void verify(const SimplexArray1 &simplices1, const PointArray1 &points1,
 
 #ifdef NDEBUG
 #define N 1e6
-#define REPS 5
+#define REPS 1
 #else
 #define N 1e2
 #define REPS 1
@@ -636,7 +662,8 @@ int main() {
     t1 = std::chrono::high_resolution_clock::now();
     auto b = cgal_DT.is_valid();
     t2 = std::chrono::high_resolution_clock::now();
-    std::cout << "CGAL verification time: " << std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count()
+    std::cout << "CGAL verification time: "
+              << std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count()
               << " is " << (b ? "" : "NOT ") << "valid" << std::endl;
 
 
@@ -707,7 +734,7 @@ int main() {
     output.add("Total");
     output.endOfRow();
 
-//    timeValidityCheck(simplices_aoa_np, points_aoa, REPS, output);
+    timeValidityCheck(simplices_aoa_np, points_aoa, REPS, output);
 //    timeValidityCheck(simplices_pa_np, points_pa, REPS, output);
 //
 //    timeValidityCheck(simplices_aoa_wp, points_aoa, REPS, output);
@@ -718,8 +745,8 @@ int main() {
 //
 //    timeValidityCheck(simplices_aoa_wp_opp, points_aoa, REPS, output);
 //    timeValidityCheck(simplices_pa_wp_opp, points_pa, REPS, output);
-//
-//#ifdef HAS_Vc
+
+#ifdef HAS_Vc
 //    timeValidityCheck(simplices_vaoa_np, points_vaoa, REPS, output);
 //    timeValidityCheck(simplices_vpa_np, points_vpa, REPS, output);
 //    timeValidityCheck(simplices_vgpa_np, points_vpa, REPS, output);
@@ -735,28 +762,28 @@ int main() {
 //    timeValidityCheck(simplices_vaoa_wp_opp, points_vaoa, REPS, output);
 //    timeValidityCheck(simplices_vpa_wp_opp, points_vpa, REPS, output);
 //    timeValidityCheck(simplices_vgpa_wp_opp, points_vpa, REPS, output);
-//#endif
-
-    std::cout << output;
-
-
-    output.clear();
-    output.add("Layout");
-    output.add("Time");
-    output.add("AvgDelta");
-    output.endOfRow();
-
-    timeDeltaCalc<PointArray<Traits<D, Precision, MemoryLayoutPA, NoPrecomputation, NoOppVertex>>>(output);
-    timeDeltaCalc<PointArray<Traits<D, Precision, MemoryLayoutAoA, NoPrecomputation, NoOppVertex>>>(output);
-
-#ifdef HAS_Vc
-    timeDeltaCalc<PointArray<Traits<D, Precision, MemoryLayoutVectorizedPA, NoPrecomputation, NoOppVertex>>>(output);
-    timeDeltaCalc<PointArray<Traits<D, Precision, MemoryLayoutVectorizedGroupedPA, NoPrecomputation, NoOppVertex>>>(
-            output);
-    timeDeltaCalc<PointArray<Traits<D, Precision, MemoryLayoutVectorizedAoA, NoPrecomputation, NoOppVertex>>>(output);
 #endif
 
     std::cout << output;
+
+
+//    output.clear();
+//    output.add("Layout");
+//    output.add("Time");
+//    output.add("AvgDelta");
+//    output.endOfRow();
+//
+//    timeDeltaCalc<PointArray<Traits<D, Precision, MemoryLayoutPA, NoPrecomputation, NoOppVertex>>>(output);
+//    timeDeltaCalc<PointArray<Traits<D, Precision, MemoryLayoutAoA, NoPrecomputation, NoOppVertex>>>(output);
+//
+//#ifdef HAS_Vc
+//    timeDeltaCalc<PointArray<Traits<D, Precision, MemoryLayoutVectorizedPA, NoPrecomputation, NoOppVertex>>>(output);
+//    timeDeltaCalc<PointArray<Traits<D, Precision, MemoryLayoutVectorizedGroupedPA, NoPrecomputation, NoOppVertex>>>(
+//            output);
+//    timeDeltaCalc<PointArray<Traits<D, Precision, MemoryLayoutVectorizedAoA, NoPrecomputation, NoOppVertex>>>(output);
+//#endif
+//
+//    std::cout << output;
 
     return 0;
 

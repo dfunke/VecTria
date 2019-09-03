@@ -230,13 +230,13 @@ public:
             for (tIndexType i = 0;
                  i + Vc::Vector<tIndexType>::size() - 1 < simplices.size(); i += Vc::Vector<tIndexType>::size()) {
 
-                subdeterminants_v<D, Precision>(i, simplices, points);
+                Predicates<Precision>::subdeterminants_v(i, simplices, points);
 
             }
         } else {
 
             for (tIndexType i = 0; i < simplices.size(); ++i) {
-                subdeterminants<D, Precision>(i, simplices, points);
+                Predicates<Precision>::subdeterminants(i, simplices, points);
 
             }
         }

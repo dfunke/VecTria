@@ -46,15 +46,3 @@ class PredicatesBase<float>;
 
 template
 class PredicatesBase<double>;
-
-template
-class Predicates<2, float>;
-
-template
-class Predicates<3, float>;
-
-template
-class Predicates<2, double>;
-
-template
-class Predicates<3, double>;
