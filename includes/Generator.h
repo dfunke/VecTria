@@ -37,11 +37,11 @@ struct Generator<2, Precision> {
     template<class PointArray>
     void convert(PointArray &pa, const Points_2 &points) {
         pa.ensure(points.size());
-        for (tIndexType i = 0; i < points.size(); ++i) {
-            auto p = pa.get(i);
+        for (const auto & cp : points) {
+            auto p = pa.get(cp.second);
 
-            p[0] = points[i].first.x();
-            p[1] = points[i].first.y();
+            p[0] = cp.first.x();
+            p[1] = cp.first.y();
         }
     }
 };
@@ -72,12 +72,12 @@ struct Generator<3, Precision> {
     template<class PointArray>
     void convert(PointArray &pa, const Points_3 &points) {
         pa.ensure(points.size());
-        for (tIndexType i = 0; i < points.size(); ++i) {
-            auto p = pa.get(i);
+        for (const auto & cp : points) {
+            auto p = pa.get(cp.second);
 
-            p[0] = points[i].first.x();
-            p[1] = points[i].first.y();
-            p[2] = points[i].first.z();
+            p[0] = cp.first.x();
+            p[1] = cp.first.y();
+            p[2] = cp.first.z();
         }
     }
 };
