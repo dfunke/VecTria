@@ -12,116 +12,110 @@ struct Checker<3, Precision> {
 
     static constexpr tDimType D = 3;
 
-    template<class SimplexArray, class PointArray>
-    bool check(const SimplexArray &simplices, const PointArray &points) {
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// vectorized
+
+    template<class SimplexArray, class PointArray, typename Ret=bool>
+    auto check(const SimplexArray &simplices,
+               const PointArray &points) -> std::enable_if_t<SimplexArray::isVectorized, Ret> {
 
         bool valid = true;
 
-        if constexpr (SimplexArray::isVectorized) {
+        if constexpr (SimplexArray::hasOppVertex) {
+            for (tIndexType i = 0;
+                 i + Vc::Vector<tIndexType>::size() - 1 < simplices.size(); i += Vc::Vector<tIndexType>::size()) {
+                for (tDimType d = 0; d < D + 1; ++d) {
 
-            if constexpr (SimplexArray::hasOppVertex) {
-                for (tIndexType i = 0;
-                     i + Vc::Vector<tIndexType>::size() - 1 < simplices.size(); i += Vc::Vector<tIndexType>::size()) {
-                    for (tDimType d = 0; d < D + 1; ++d) {
+                    auto p = simplices.opp_vertex.vec(i, d);
+                    auto mask = p == INF;
+                    p(mask) = 0;
 
-                        auto p = simplices.opp_vertex.vec(i, d);
-                        auto mask = p == INF;
-                        p(mask) = 0;
+                    auto det = Predicates<Precision>::insphere_fast(i, p, simplices, points);
 
+                    static_assert(Vc::Vector<tIndexType>::size() == Vc::Vector<Precision>::size());
+                    if (Vc::any_of((det < 0) & !Vc::simd_cast<Vc::Mask<Precision>>(mask))) {
+                        valid = false;
+                    }
+                }
+            }
+        } else {
+
+            for (tIndexType i = 0;
+                 i + Vc::Vector<tIndexType>::size() - 1 < simplices.size(); i += Vc::Vector<tIndexType>::size()) {
+
+                for (tDimType d = 0; d < D + 1; ++d) {
+
+                    auto neighbors = simplices.neighbors.vec(i, d);
+                    auto infNeighborMask = neighbors == INF;
+                    neighbors(infNeighborMask) = 0;
+
+                    for (tDimType d2 = 0; d2 < D + 1; ++d2) {
+
+                        auto p = simplices.vertices.vec(neighbors, d2);
                         auto det = Predicates<Precision>::insphere_fast(i, p, simplices, points);
 
-                        static_assert(Vc::Vector<tIndexType>::size() == Vc::Vector<Precision>::size());
-                        if (Vc::any_of((det < 0) & !Vc::simd_cast<Vc::Mask<Precision>>(mask))) {
+                        if (Vc::any_of((det < 0) & !Vc::simd_cast<Vc::Mask<Precision>>(infNeighborMask))) {
                             valid = false;
                         }
                     }
                 }
-            } else {
-
-                for (tIndexType i = 0;
-                     i + Vc::Vector<tIndexType>::size() - 1 < simplices.size(); i += Vc::Vector<tIndexType>::size()) {
-
-                    for (tDimType d = 0; d < D + 1; ++d) {
-
-                        auto neighbors = simplices.neighbors.vec(i, d);
-                        auto mask = neighbors == INF;
-                        neighbors(mask) = 0;
-
-                        for (tDimType d2 = 0; d2 < D + 1; ++d2) {
-
-                            auto p = simplices.vertices.vec(neighbors, d2);
-                            auto det = Predicates<Precision>::insphere_fast(i, p, simplices, points);
-
-                            if (Vc::any_of((det < 0) & !Vc::simd_cast<Vc::Mask<Precision>>(mask))) {
-                                valid = false;
-                            }
-                        }
-                    }
-                }
             }
+        }
 
-        } else {
+        return valid;
+    }
 
-            if constexpr (SimplexArray::hasOppVertex) {
-                for (tIndexType i = 0; i < simplices.size(); ++i) {
-                    for (tDimType d = 0; d < D + 1; ++d) {
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// non-vectorized
 
-                        auto p = simplices.opp_vertex(i, d);
+    template<class SimplexArray, class PointArray, typename Ret=bool>
+    auto check(const SimplexArray &simplices,
+               const PointArray &points) -> std::enable_if_t<not SimplexArray::isVectorized, Ret> {
 
-                        if (p != INF) {
-                            auto[det, permanent] = Predicates<Precision>::insphere(i, p, simplices, points);
+        bool valid = true;
 
-                            if (!Predicates<Precision>::isFinal(det, permanent)) {
-                                std::cout << "adapt called" << std::endl;
-                                det = Predicates<Precision>::insphere_adapt(permanent, i, p, simplices, points);
-                            }
+        for (tIndexType i = 0; i < simplices.size(); ++i) {
+            for (tDimType d = 0; d < D + 1; ++d) {
 
-                            det = Predicates<Precision>::pred_orient(i, simplices, points) *
-                                  Predicates<Precision>::pred_insphere(i, p, simplices, points);
+                tIndexType oppVertex = INF;
 
-                            if (det >= 0) {
-//                                std::cout << "invalid" << std::endl;
-                                valid = false;
-                            }
-                        }
-                    }
-                }
-            } else {
-                uint inv = 0;
-                uint val = 0;
-                for (tIndexType i = 0; i < simplices.size(); ++i) {
+                if constexpr (SimplexArray::hasOppVertex) {
+                    oppVertex = simplices.opp_vertex(i, d);
+                } else {
                     auto s = simplices.get(i);
 
-                    for (tDimType n = 0; n < D + 1; ++n) {
-                        if (s.neighbor(n) != INF) {
-                            auto sn = simplices.get(n);
+                    if (s.neighbor(d) != INF) {
+                        auto sn = simplices.get(d);
 
-                            for (tDimType j = 0; j < D + 1; ++j) {
-                                auto[det, permanent] = Predicates<Precision>::insphere(i, sn.vertex(j), simplices,
-                                                                                       points);
+                        for (tDimType d1 = 0; d1 < D + 1; ++d1) {
 
-                                if (!Predicates<Precision>::isFinal(det, permanent)) {
-                                    std::cout << "adapt called" << std::endl;
-                                    det = Predicates<Precision>::insphere_adapt(permanent, i, sn.vertex(j), simplices,
-                                                                                points);
+                            bool opp = true;
+
+                            for (tDimType d2 = 0; d2 < D + 1 && opp + 1; ++d2) {
+                                if (sn.vertex(d1) == s.vertex(d2)) {
+                                    opp = false;
                                 }
+                            }
 
-                                det = Predicates<Precision>::pred_orient(i, simplices, points) *
-                                      Predicates<Precision>::pred_insphere(i, sn.vertex(j), simplices, points);
-
-                                if (det < 0) {
-//                                    std::cout << "invalid" << std::endl;
-                                    ++inv;
-                                    valid = false;
-                                } else {
-                                    ++val;
-                                }
+                            if (opp) {
+                                oppVertex = sn.vertex(d1);
+                                break;
                             }
                         }
                     }
                 }
 
-                std::cout << "valid: " << val << " invalid: " << inv << std::endl;
+                if (oppVertex != INF) {
+                    auto[det, permanent] = Predicates<Precision>::insphere(i, oppVertex, simplices, points);
+
+                    if (!Predicates<Precision>::isFinal(det, permanent)) {
+                        det = Predicates<Precision>::insphere_adapt(permanent, i, oppVertex, simplices, points);
+                    }
+
+                    if (det < 0) {
+                        valid = false;
+                    }
+                }
             }
         }
 
