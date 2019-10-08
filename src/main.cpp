@@ -363,6 +363,7 @@ int main() {
             cgal_DT);
     auto simplices_vgpa_wp_opp = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutVectorizedGroupedPA, PrecomputeSubDets, WithOppVertex>>>(
             cgal_DT);
+
 #endif
 
 #ifdef HAS_VTUNE
@@ -383,33 +384,33 @@ int main() {
     output.endOfRow();
 
     timeValidityCheck(simplices_aoa_np, points_aoa, REPS, output);
-//    timeValidityCheck(simplices_pa_np, points_pa, REPS, output);
-//
-//    timeValidityCheck(simplices_aoa_wp, points_aoa, REPS, output);
-//    timeValidityCheck(simplices_pa_wp, points_pa, REPS, output);
-//
-//    timeValidityCheck(simplices_aoa_np_opp, points_aoa, REPS, output);
-//    timeValidityCheck(simplices_pa_np_opp, points_pa, REPS, output);
-//
-//    timeValidityCheck(simplices_aoa_wp_opp, points_aoa, REPS, output);
-//    timeValidityCheck(simplices_pa_wp_opp, points_pa, REPS, output);
+    timeValidityCheck(simplices_pa_np, points_pa, REPS, output);
+
+    timeValidityCheck(simplices_aoa_wp, points_aoa, REPS, output);
+    timeValidityCheck(simplices_pa_wp, points_pa, REPS, output);
+
+    timeValidityCheck(simplices_aoa_np_opp, points_aoa, REPS, output);
+    timeValidityCheck(simplices_pa_np_opp, points_pa, REPS, output);
+
+    timeValidityCheck(simplices_aoa_wp_opp, points_aoa, REPS, output);
+    timeValidityCheck(simplices_pa_wp_opp, points_pa, REPS, output);
 
 #ifdef HAS_Vc
-//    timeValidityCheck(simplices_vaoa_np, points_vaoa, REPS, output);
-//    timeValidityCheck(simplices_vpa_np, points_vpa, REPS, output);
-//    timeValidityCheck(simplices_vgpa_np, points_vpa, REPS, output);
-//
-//    timeValidityCheck(simplices_vaoa_wp, points_vaoa, REPS, output);
-//    timeValidityCheck(simplices_vpa_wp, points_vpa, REPS, output);
-//    timeValidityCheck(simplices_vgpa_wp, points_vpa, REPS, output);
-//
-//    timeValidityCheck(simplices_vaoa_np_opp, points_vaoa, REPS, output);
-//    timeValidityCheck(simplices_vpa_np_opp, points_vpa, REPS, output);
-//    timeValidityCheck(simplices_vgpa_np_opp, points_vpa, REPS, output);
-//
-//    timeValidityCheck(simplices_vaoa_wp_opp, points_vaoa, REPS, output);
-//    timeValidityCheck(simplices_vpa_wp_opp, points_vpa, REPS, output);
-//    timeValidityCheck(simplices_vgpa_wp_opp, points_vpa, REPS, output);
+    timeValidityCheck(simplices_vaoa_np, points_vaoa, REPS, output);
+    timeValidityCheck(simplices_vpa_np, points_vpa, REPS, output);
+    timeValidityCheck(simplices_vgpa_np, points_vpa, REPS, output);
+
+    timeValidityCheck(simplices_vaoa_wp, points_vaoa, REPS, output);
+    timeValidityCheck(simplices_vpa_wp, points_vpa, REPS, output);
+    timeValidityCheck(simplices_vgpa_wp, points_vpa, REPS, output);
+
+    timeValidityCheck(simplices_vaoa_np_opp, points_vaoa, REPS, output);
+    timeValidityCheck(simplices_vpa_np_opp, points_vpa, REPS, output);
+    timeValidityCheck(simplices_vgpa_np_opp, points_vpa, REPS, output);
+
+    timeValidityCheck(simplices_vaoa_wp_opp, points_vaoa, REPS, output);
+    timeValidityCheck(simplices_vpa_wp_opp, points_vpa, REPS, output);
+    timeValidityCheck(simplices_vgpa_wp_opp, points_vpa, REPS, output);
 #endif
 
     std::cout << output;
