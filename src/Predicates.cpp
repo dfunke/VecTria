@@ -37,6 +37,9 @@ template<typename Precision> Precision PredicatesBase<Precision>::isperrboundA;
 template<typename Precision> Precision PredicatesBase<Precision>::isperrboundB;
 template<typename Precision> Precision PredicatesBase<Precision>::isperrboundC;
 
+template<typename Precision> Precision PredicatesBase<Precision>::o3dstaticfilter;
+template<typename Precision> Precision PredicatesBase<Precision>::ispstaticfilter;
+
 template<typename Precision> typename PredicatesBase<Precision>::constructor PredicatesBase<Precision>::ctor;
 
 // specilizations

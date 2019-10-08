@@ -124,7 +124,9 @@
 #if __APPLE__
 #include "dummy_fpu_control.h"
 #else
+
 #include <fpu_control.h>
+
 #endif
 
 
@@ -395,6 +397,14 @@ protected:
     static Precision iccerrboundA, iccerrboundB, iccerrboundC;
     static Precision isperrboundA, isperrboundB, isperrboundC;
 
+// Static filters for orient3d() and insphere().
+// They are pre-calcualted and set in exactinit().
+// Added by H. Si, 2012-08-23.
+    static Precision o3dstaticfilter, ispstaticfilter;
+    static constexpr Precision o3dstaticfilter_const = 5.1107127829973299e-15;
+    static constexpr Precision ispstaticfilter_const = 1.2466136531027298e-13;
+
+
 /*****************************************************************************/
 /*                                                                           */
 /*  exactinit()   Initialize the variables used for exact arithmetic.        */
@@ -418,7 +428,7 @@ protected:
 
     struct constructor {
 
-        typedef PredicatesBase<Precision> super;
+        typedef PredicatesBase<Precision> owner;
 
         constructor() {
             Precision half;
@@ -437,8 +447,8 @@ protected:
 
             every_other = 1;
             half = 0.5;
-            super::epsilon = 1.0;
-            super::splitter = 1.0;
+            owner::epsilon = 1.0;
+            owner::splitter = 1.0;
             check = 1.0;
             /* Repeatedly divide `epsilon' by two until it is too small to add to    */
             /*   one without causing roundoff.  (Also check if the sum is equal to   */
@@ -446,33 +456,60 @@ protected:
             /*   rounding.  Not that this library will work on such machines anyway. */
             do {
                 lastcheck = check;
-                super::epsilon *= half;
+                owner::epsilon *= half;
                 if (every_other) {
-                    super::splitter *= 2.0;
+                    owner::splitter *= 2.0;
                 }
                 every_other = !every_other;
-                check = 1.0 + super::epsilon;
+                check = 1.0 + owner::epsilon;
             } while ((check != 1.0) && (check != lastcheck));
-            super::splitter += 1.0;
+            owner::splitter += 1.0;
 
             /* Error bounds for orientation and incircle tests. */
-            super::resulterrbound = (3.0 + 8.0 * super::epsilon) * super::epsilon;
-            super::ccwerrboundA = (3.0 + 16.0 * super::epsilon) * super::epsilon;
-            super::ccwerrboundB = (2.0 + 12.0 * super::epsilon) * super::epsilon;
-            super::ccwerrboundC = (9.0 + 64.0 * super::epsilon) * super::epsilon * super::epsilon;
-            super::o3derrboundA = (7.0 + 56.0 * super::epsilon) * super::epsilon;
-            super::o3derrboundB = (3.0 + 28.0 * super::epsilon) * super::epsilon;
-            super::o3derrboundC = (26.0 + 288.0 * super::epsilon) * super::epsilon * super::epsilon;
-            super::iccerrboundA = (10.0 + 96.0 * super::epsilon) * super::epsilon;
-            super::iccerrboundB = (4.0 + 48.0 * super::epsilon) * super::epsilon;
-            super::iccerrboundC = (44.0 + 576.0 * super::epsilon) * super::epsilon * super::epsilon;
-            super::isperrboundA = (16.0 + 224.0 * super::epsilon) * super::epsilon;
-            super::isperrboundB = (5.0 + 72.0 * super::epsilon) * super::epsilon;
-            super::isperrboundC = (71.0 + 1408.0 * super::epsilon) * super::epsilon * super::epsilon;
+            owner::resulterrbound = (3.0 + 8.0 * owner::epsilon) * owner::epsilon;
+            owner::ccwerrboundA = (3.0 + 16.0 * owner::epsilon) * owner::epsilon;
+            owner::ccwerrboundB = (2.0 + 12.0 * owner::epsilon) * owner::epsilon;
+            owner::ccwerrboundC = (9.0 + 64.0 * owner::epsilon) * owner::epsilon * owner::epsilon;
+            owner::o3derrboundA = (7.0 + 56.0 * owner::epsilon) * owner::epsilon;
+            owner::o3derrboundB = (3.0 + 28.0 * owner::epsilon) * owner::epsilon;
+            owner::o3derrboundC = (26.0 + 288.0 * owner::epsilon) * owner::epsilon * owner::epsilon;
+            owner::iccerrboundA = (10.0 + 96.0 * owner::epsilon) * owner::epsilon;
+            owner::iccerrboundB = (4.0 + 48.0 * owner::epsilon) * owner::epsilon;
+            owner::iccerrboundC = (44.0 + 576.0 * owner::epsilon) * owner::epsilon * owner::epsilon;
+            owner::isperrboundA = (16.0 + 224.0 * owner::epsilon) * owner::epsilon;
+            owner::isperrboundB = (5.0 + 72.0 * owner::epsilon) * owner::epsilon;
+            owner::isperrboundC = (71.0 + 1408.0 * owner::epsilon) * owner::epsilon * owner::epsilon;
         }
     };
 
     static constructor ctor;
+
+    static void set_static_limits(Precision maxx, Precision maxy, Precision maxz){
+        // Calculate the two static filters for orient3d() and insphere() tests.
+        // Added by H. Si, 2012-08-23.
+
+
+        // Sort maxx < maxy < maxz
+        if (maxx > maxz) {
+            Precision tmp = maxx;
+            maxx = maxz;
+            maxz = tmp;
+        }
+        if (maxy > maxz) {
+            Precision tmp = maxy;
+            maxy = maxz;
+            maxz = tmp;
+        }
+        else if (maxy < maxx) {
+            Precision tmp = maxy;
+            maxy = maxx;
+            maxx = tmp;
+        }
+
+
+        o3dstaticfilter = o3dstaticfilter_const * maxx * maxy * maxz;
+        ispstaticfilter = ispstaticfilter_const * maxx * maxy * maxz * (maxz * maxz);
+    }
 
 /*****************************************************************************/
 /*                                                                           */
