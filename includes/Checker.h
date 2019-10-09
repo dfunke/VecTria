@@ -21,43 +21,41 @@ struct Checker<3, Precision> {
 
         bool valid = true;
 
-        if constexpr (SimplexArray::hasOppVertex) {
-            for (tIndexType i = 0;
-                 i + Vc::Vector<tIndexType>::size() - 1 < simplices.size(); i += Vc::Vector<tIndexType>::size()) {
-                for (tDimType d = 0; d < D + 1; ++d) {
 
-                    auto p = simplices.opp_vertex.vec(i, d);
-                    auto mask = p == INF;
-                    p(mask) = 0;
+        for (tIndexType i = 0;
+             i + Vc::Vector<tIndexType>::size() - 1 < simplices.size(); i += Vc::Vector<tIndexType>::size()) {
 
-                    auto det = Predicates<Precision>::insphere_fast(i, p, simplices, points);
+            for (tDimType d = 0; d < D + 1; ++d) {
 
-                    static_assert(Vc::Vector<tIndexType>::size() == Vc::Vector<Precision>::size());
-                    if (Vc::any_of((det < 0) & !Vc::simd_cast<Vc::Mask<Precision>>(mask))) {
-                        valid = false;
-                    }
-                }
-            }
-        } else {
+                Vc::Vector<tIndexType> oppVertex(INF);
 
-            for (tIndexType i = 0;
-                 i + Vc::Vector<tIndexType>::size() - 1 < simplices.size(); i += Vc::Vector<tIndexType>::size()) {
+                if constexpr (SimplexArray::hasOppVertex) {
+                    oppVertex = simplices.opp_vertex.vec(i, d);
+                } else {
 
-                for (tDimType d = 0; d < D + 1; ++d) {
+                    auto s = Vc::Vector<tIndexType>(i) + Vc::Vector<tIndexType>::IndexesFromZero();
 
                     auto neighbors = simplices.neighbors.vec(i, d);
-                    auto infNeighborMask = neighbors == INF;
-                    neighbors(infNeighborMask) = 0;
+                    auto maskInfNeighbor = neighbors == INF;
+                    neighbors(maskInfNeighbor) = 0;
 
-                    for (tDimType d2 = 0; d2 < D + 1; ++d2) {
+                    for (tDimType d1 = 0; d1 < D + 1; ++d1) {
 
-                        auto p = simplices.vertices.vec(neighbors, d2);
-                        auto det = Predicates<Precision>::insphere_fast(i, p, simplices, points);
+                        auto n = simplices.neighbors.vec(neighbors, d1);
+                        auto maskEqualNeighbor = n == s;
 
-                        if (Vc::any_of((det < 0) & !Vc::simd_cast<Vc::Mask<Precision>>(infNeighborMask))) {
-                            valid = false;
-                        }
+                        oppVertex(maskEqualNeighbor) = simplices.vertices.vec(neighbors, d1);
                     }
+                }
+
+                auto maskInfOppVertex = oppVertex == INF;
+                oppVertex(maskInfOppVertex) = 0;
+
+                auto det = Predicates<Precision>::insphere_fast(i, oppVertex, simplices, points);
+
+                static_assert(Vc::Vector<tIndexType>::size() == Vc::Vector<Precision>::size());
+                if (Vc::any_of((det < 0) & !Vc::simd_cast<Vc::Mask<Precision>>(maskInfOppVertex))) {
+                    valid = false;
                 }
             }
         }
@@ -88,7 +86,7 @@ struct Checker<3, Precision> {
                         auto sn = simplices.get(d);
 
                         for (tDimType d1 = 0; d1 < D + 1; ++d1) {
-                            if(sn.neighbor(d1) == i){
+                            if (sn.neighbor(d1) == i) {
                                 oppVertex = sn.vertex(d1);
                                 break;
                             }
