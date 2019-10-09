@@ -88,16 +88,7 @@ struct Checker<3, Precision> {
                         auto sn = simplices.get(d);
 
                         for (tDimType d1 = 0; d1 < D + 1; ++d1) {
-
-                            bool opp = true;
-
-                            for (tDimType d2 = 0; d2 < D + 1 && opp + 1; ++d2) {
-                                if (sn.vertex(d1) == s.vertex(d2)) {
-                                    opp = false;
-                                }
-                            }
-
-                            if (opp) {
+                            if(sn.neighbor(d1) == i){
                                 oppVertex = sn.vertex(d1);
                                 break;
                             }
