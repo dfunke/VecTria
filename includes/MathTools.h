@@ -41,20 +41,6 @@ public:
 
 #endif
 
-    static bool isFinal(const Precision det, const Precision permanent) {
-        Precision errbound = super::isperrboundA * permanent;
-        return ((det > errbound) || (-det > errbound));
-    }
-
-#ifdef HAS_Vc
-
-    static inline auto isFinal(const Vc::Vector<Precision> &det, const Vc::Vector<Precision> &permanent) {
-        Vc::Vector<Precision> errbound = super::isperrboundA * permanent;
-        return ((det > errbound) || (-det > errbound));
-    }
-
-#endif
-
     template<class SimplexArray, class PointArray>
     static void subdeterminants(const tIndexType &s, SimplexArray &simplices, const PointArray &points) {
 
@@ -196,7 +182,7 @@ public:
     }
 
     template<class SimplexArray, class PointArray>
-    static std::tuple<Precision, Precision>
+    static auto
     insphere(const tIndexType &s, const tIndexType &pe, const SimplexArray &simplices, const PointArray &points) {
 
         const tDimType D = SimplexArray::D;
@@ -204,7 +190,7 @@ public:
         if constexpr (SimplexArray::hasSubdets) {
             Precision ae[D];
             Precision elift;
-            Precision det;
+            Precision det, permanent;
 
             for (uint i = 0; i < D; ++i) {
                 ae[i] = points.coords(pe, i) - points.coords(simplices.vertices(s, 0), i);
@@ -216,7 +202,9 @@ public:
                   ae[Z] * simplices.subdets(s, 2) +
                   elift * simplices.subdets(s, 3);
 
-            return std::make_tuple(det, 0);
+            permanent = !((det > super::ispstaticfilter) || (-det > super::ispstaticfilter));
+
+            return std::make_tuple(det, permanent);
         } else {
             Precision ae[D], be[D], ce[D], de[D];
             Precision aexbey, bexaey, bexcey, cexbey, cexdey, dexcey, dexaey, aexdey;
@@ -228,8 +216,7 @@ public:
             Precision aexbeyplus, bexaeyplus, bexceyplus, cexbeyplus;
             Precision cexdeyplus, dexceyplus, dexaeyplus, aexdeyplus;
             Precision aexceyplus, cexaeyplus, bexdeyplus, dexbeyplus;
-            Precision det;
-            Precision permanent;
+            Precision det, permanent, errbound;
 
             for (uint i = 0; i < D; ++i) {
                 ae[i] = points.coords(simplices.vertices(s, 0), i) - points.coords(pe, i);
@@ -274,6 +261,10 @@ public:
 
             det = (dlift * abc - clift * dab) + (blift * cda - alift * bcd);
 
+            if ((det > super::ispstaticfilter) || (-det > super::ispstaticfilter)) {
+                return std::make_tuple(det, Precision(0));
+            }
+
             aezplus = Absolute(ae[Z]);
             bezplus = Absolute(be[Z]);
             cezplus = Absolute(ce[Z]);
@@ -307,6 +298,13 @@ public:
                            + (aexbeyplus + bexaeyplus) * cezplus)
                           * dlift;
 
+
+            errbound = super::isperrboundA * permanent;
+            if ((det > errbound) || (-det > errbound)) {
+                permanent = 0;
+            }
+
+
             return std::make_tuple(det, permanent);
         }
 
@@ -314,7 +312,7 @@ public:
 
     template<class SimplexArray, class PointArray>
     static Precision
-    insphere_adapt(const Precision permanent, const tIndexType &s, const tIndexType &pe, const SimplexArray &simplices,
+    insphere_adapt(Precision permanent, const tIndexType &s, const tIndexType &pe, const SimplexArray &simplices,
                    const PointArray &points) {
 
         const tDimType D = SimplexArray::D;
@@ -327,6 +325,83 @@ public:
             d[i] = points.coords(simplices.vertices(s, 3), i);
             e[i] = points.coords(pe, i);
         }
+
+        if constexpr (SimplexArray::hasSubdets) {
+            // the permanent is not good and needs to be calculated
+
+            Precision ae[D], be[D], ce[D], de[D];
+            Precision aexbey, bexaey, bexcey, cexbey, cexdey, dexcey, dexaey, aexdey;
+            Precision aexcey, cexaey, bexdey, dexbey;
+            Precision alift, blift, clift, dlift;
+            Precision aezplus, bezplus, cezplus, dezplus;
+            Precision aexbeyplus, bexaeyplus, bexceyplus, cexbeyplus;
+            Precision cexdeyplus, dexceyplus, dexaeyplus, aexdeyplus;
+            Precision aexceyplus, cexaeyplus, bexdeyplus, dexbeyplus;
+
+            for (uint i = 0; i < D; ++i) {
+                ae[i] = a[i] - e[i];
+                be[i] = b[i] - e[i];
+                ce[i] = c[i] - e[i];
+                de[i] = d[i] - e[i];
+            }
+
+            aexbey = ae[X] * be[Y];
+            bexaey = be[X] * ae[Y];
+
+            bexcey = be[X] * ce[Y];
+            cexbey = ce[X] * be[Y];
+
+            cexdey = ce[X] * de[Y];
+            dexcey = de[X] * ce[Y];
+
+            dexaey = de[X] * ae[Y];
+            aexdey = ae[X] * de[Y];
+
+            aexcey = ae[X] * ce[Y];
+            cexaey = ce[X] * ae[Y];
+
+            bexdey = be[X] * de[Y];
+            dexbey = de[X] * be[Y];
+
+            alift = ae[X] * ae[X] + ae[Y] * ae[Y] + ae[Z] * ae[Z];
+            blift = be[X] * be[X] + be[Y] * be[Y] + be[Z] * be[Z];
+            clift = ce[X] * ce[X] + ce[Y] * ce[Y] + ce[Z] * ce[Z];
+            dlift = de[X] * de[X] + de[Y] * de[Y] + de[Z] * de[Z];
+
+            aezplus = Absolute(ae[Z]);
+            bezplus = Absolute(be[Z]);
+            cezplus = Absolute(ce[Z]);
+            dezplus = Absolute(de[Z]);
+            aexbeyplus = Absolute(aexbey);
+            bexaeyplus = Absolute(bexaey);
+            bexceyplus = Absolute(bexcey);
+            cexbeyplus = Absolute(cexbey);
+            cexdeyplus = Absolute(cexdey);
+            dexceyplus = Absolute(dexcey);
+            dexaeyplus = Absolute(dexaey);
+            aexdeyplus = Absolute(aexdey);
+            aexceyplus = Absolute(aexcey);
+            cexaeyplus = Absolute(cexaey);
+            bexdeyplus = Absolute(bexdey);
+            dexbeyplus = Absolute(dexbey);
+            permanent = ((cexdeyplus + dexceyplus) * bezplus
+                         + (dexbeyplus + bexdeyplus) * cezplus
+                         + (bexceyplus + cexbeyplus) * dezplus)
+                        * alift
+                        + ((dexaeyplus + aexdeyplus) * cezplus
+                           + (aexceyplus + cexaeyplus) * dezplus
+                           + (cexdeyplus + dexceyplus) * aezplus)
+                          * blift
+                        + ((aexbeyplus + bexaeyplus) * dezplus
+                           + (bexdeyplus + dexbeyplus) * aezplus
+                           + (dexaeyplus + aexdeyplus) * bezplus)
+                          * clift
+                        + ((bexceyplus + cexbeyplus) * aezplus
+                           + (cexaeyplus + aexceyplus) * bezplus
+                           + (aexbeyplus + bexaeyplus) * cezplus)
+                          * dlift;
+        }
+
 
         return super::insphere_adapt(a, b, c, d, e, permanent);
 
@@ -355,7 +430,7 @@ public:
     template<class SimplexArray, class PointArray>
     static Precision
     pred_orient(const tIndexType &s, const SimplexArray &simplices,
-                  const PointArray &points) {
+                const PointArray &points) {
 
         const tDimType D = SimplexArray::D;
         Precision a[D], b[D], c[D], d[D];
@@ -374,9 +449,8 @@ public:
 #ifdef HAS_Vc
 
     template<class SimplexArray, class PointArray, typename Simplex>
-    static Vc::Vector<Precision>
-    insphere_fast(const Simplex &s, const Vc::Vector<tIndexType> &pe, const SimplexArray &simplices,
-                  const PointArray &points) {
+    static auto insphere_fast(const Simplex &s, const Vc::Vector<tIndexType> &pe, const SimplexArray &simplices,
+                              const PointArray &points) {
 
         const tDimType D = SimplexArray::D;
 
@@ -425,6 +499,136 @@ public:
             dlift = de[X] * de[X] + de[Y] * de[Y] + de[Z] * de[Z];
 
             return (dlift * abc - clift * dab) + (blift * cda - alift * bcd);
+        }
+
+    }
+
+    template<class SimplexArray, class PointArray, typename Simplex>
+    static auto insphere(const Simplex &s, const Vc::Vector<tIndexType> &pe, const SimplexArray &simplices,
+                         const PointArray &points) {
+
+        const tDimType D = SimplexArray::D;
+
+        if constexpr (SimplexArray::hasSubdets) {
+            Vc::Vector<Precision> ae[D];
+            Vc::Vector<Precision> elift;
+            Vc::Vector<Precision> det;
+            Vc::Vector<Precision> permanent;
+
+            for (uint i = 0; i < D; ++i) {
+                ae[i] = points.coords.vec(pe, i) - points.coords.vec(simplices.vertices.vec(s, 0), i);
+            }
+
+            elift = ae[X] * ae[X] + ae[Y] * ae[Y] + ae[Z] * ae[Z];
+
+            det = -ae[X] * simplices.subdets.vec(s, 0) + ae[Y] * simplices.subdets.vec(s, 1) -
+                  ae[Z] * simplices.subdets.vec(s, 2) +
+                  elift * simplices.subdets.vec(s, 3);
+
+            permanent = 1;
+            auto maskFinal = ((det > super::ispstaticfilter) || (-det > super::ispstaticfilter));
+            permanent(maskFinal) = 0;
+
+            return std::make_tuple(det, permanent);
+        } else {
+            Vc::Vector<Precision> ae[D], be[D], ce[D], de[D];
+            Vc::Vector<Precision> aexbey, bexaey, bexcey, cexbey, cexdey, dexcey, dexaey, aexdey;
+            Vc::Vector<Precision> aexcey, cexaey, bexdey, dexbey;
+            Vc::Vector<Precision> alift, blift, clift, dlift;
+            Vc::Vector<Precision> ab, bc, cd, da, ac, bd;
+            Vc::Vector<Precision> abc, bcd, cda, dab;
+            Vc::Vector<Precision> aezplus, bezplus, cezplus, dezplus;
+            Vc::Vector<Precision> aexbeyplus, bexaeyplus, bexceyplus, cexbeyplus;
+            Vc::Vector<Precision> cexdeyplus, dexceyplus, dexaeyplus, aexdeyplus;
+            Vc::Vector<Precision> aexceyplus, cexaeyplus, bexdeyplus, dexbeyplus;
+            Vc::Vector<Precision> det, permanent, errbound;
+
+            for (uint i = 0; i < D; ++i) {
+                ae[i] = points.coords.vec(simplices.vertices.vec(s, 0), i) - points.coords.vec(pe, i);
+                be[i] = points.coords.vec(simplices.vertices.vec(s, 1), i) - points.coords.vec(pe, i);
+                ce[i] = points.coords.vec(simplices.vertices.vec(s, 2), i) - points.coords.vec(pe, i);
+                de[i] = points.coords.vec(simplices.vertices.vec(s, 3), i) - points.coords.vec(pe, i);
+            }
+
+            aexbey = ae[X] * be[Y];
+            bexaey = be[X] * ae[Y];
+            ab = aexbey - bexaey;
+
+            bexcey = be[X] * ce[Y];
+            cexbey = ce[X] * be[Y];
+            bc = bexcey - cexbey;
+
+            cexdey = ce[X] * de[Y];
+            dexcey = de[X] * ce[Y];
+            cd = cexdey - dexcey;
+
+            dexaey = de[X] * ae[Y];
+            aexdey = ae[X] * de[Y];
+            da = dexaey - aexdey;
+
+            aexcey = ae[X] * ce[Y];
+            cexaey = ce[X] * ae[Y];
+            ac = aexcey - cexaey;
+
+            bexdey = be[X] * de[Y];
+            dexbey = de[X] * be[Y];
+            bd = bexdey - dexbey;
+
+            abc = ae[Z] * bc - be[Z] * ac + ce[Z] * ab;
+            bcd = be[Z] * cd - ce[Z] * bd + de[Z] * bc;
+            cda = ce[Z] * da + de[Z] * ac + ae[Z] * cd;
+            dab = de[Z] * ab + ae[Z] * bd + be[Z] * da;
+
+            alift = ae[X] * ae[X] + ae[Y] * ae[Y] + ae[Z] * ae[Z];
+            blift = be[X] * be[X] + be[Y] * be[Y] + be[Z] * be[Z];
+            clift = ce[X] * ce[X] + ce[Y] * ce[Y] + ce[Z] * ce[Z];
+            dlift = de[X] * de[X] + de[Y] * de[Y] + de[Z] * de[Z];
+
+            det = (dlift * abc - clift * dab) + (blift * cda - alift * bcd);
+
+            if (Vc::all_of((det > super::ispstaticfilter) || (-det > super::ispstaticfilter))) {
+                permanent = 0;
+                return std::make_tuple(det, permanent);
+            }
+
+            aezplus = Vc::abs(ae[Z]);
+            bezplus = Vc::abs(be[Z]);
+            cezplus = Vc::abs(ce[Z]);
+            dezplus = Vc::abs(de[Z]);
+            aexbeyplus = Vc::abs(aexbey);
+            bexaeyplus = Vc::abs(bexaey);
+            bexceyplus = Vc::abs(bexcey);
+            cexbeyplus = Vc::abs(cexbey);
+            cexdeyplus = Vc::abs(cexdey);
+            dexceyplus = Vc::abs(dexcey);
+            dexaeyplus = Vc::abs(dexaey);
+            aexdeyplus = Vc::abs(aexdey);
+            aexceyplus = Vc::abs(aexcey);
+            cexaeyplus = Vc::abs(cexaey);
+            bexdeyplus = Vc::abs(bexdey);
+            dexbeyplus = Vc::abs(dexbey);
+            permanent = ((cexdeyplus + dexceyplus) * bezplus
+                         + (dexbeyplus + bexdeyplus) * cezplus
+                         + (bexceyplus + cexbeyplus) * dezplus)
+                        * alift
+                        + ((dexaeyplus + aexdeyplus) * cezplus
+                           + (aexceyplus + cexaeyplus) * dezplus
+                           + (cexdeyplus + dexceyplus) * aezplus)
+                          * blift
+                        + ((aexbeyplus + bexaeyplus) * dezplus
+                           + (bexdeyplus + dexbeyplus) * aezplus
+                           + (dexaeyplus + aexdeyplus) * bezplus)
+                          * clift
+                        + ((bexceyplus + cexbeyplus) * aezplus
+                           + (cexaeyplus + aexceyplus) * bezplus
+                           + (aexbeyplus + bexaeyplus) * cezplus)
+                          * dlift;
+
+            errbound = super::isperrboundA * permanent;
+            auto maskFinal = ((det > errbound) || (-det > errbound));
+            permanent(maskFinal) = 0;
+
+            return std::make_tuple(det, permanent);
         }
 
     }

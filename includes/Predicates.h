@@ -484,6 +484,7 @@ protected:
 
     static constructor ctor;
 
+public:
     static void set_static_limits(Precision maxx, Precision maxy, Precision maxz){
         // Calculate the two static filters for orient3d() and insphere() tests.
         // Added by H. Si, 2012-08-23.
@@ -510,6 +511,8 @@ protected:
         o3dstaticfilter = o3dstaticfilter_const * maxx * maxy * maxz;
         ispstaticfilter = ispstaticfilter_const * maxx * maxy * maxz * (maxz * maxz);
     }
+
+protected:
 
 /*****************************************************************************/
 /*                                                                           */

@@ -54,6 +54,8 @@ struct FileReader<3, Precision> {
         std::getline(f, line);
         assert (line.find("ITEM: ATOMS") != std::string::npos);
         pa.ensure(n);
+
+        Precision maxx = 0, maxy = 0, maxz = 0;
         for (tIndexType i = 0; i < n; ++i) {
             std::getline(f, line);
 
@@ -65,7 +67,13 @@ struct FileReader<3, Precision> {
             p[0] = static_cast<Precision>(std::stod(splits[2]));
             p[1] = static_cast<Precision>(std::stod(splits[3]));
             p[2] = static_cast<Precision>(std::stod(splits[4]));
+
+            if(p[0] > maxx) maxx = p[0];
+            if(p[1] > maxy) maxy = p[1];
+            if(p[2] > maxz) maxz = p[2];
         }
+
+        Predicates<Precision>::set_static_limits(maxx, maxy, maxz);
 
         return timestep;
     }

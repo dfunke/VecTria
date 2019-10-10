@@ -284,6 +284,7 @@ int main() {
 
     Generator<D, Precision> generator;
     auto cgal_points = generator.generate(N);
+    Predicates<Precision>::set_static_limits(1,1,1);
 
     PointArray<Traits<D, Precision, MemoryLayoutAoA, NoPrecomputation, NoOppVertex>> points_aoa;
     generator.convert(points_aoa, cgal_points);
