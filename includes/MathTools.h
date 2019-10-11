@@ -10,6 +10,7 @@
 
 #include "Datastructures.h"
 #include "Predicates.h"
+#include "Stats.h"
 
 template<typename Precision>
 class Predicates : public PredicatesBase<Precision> {
@@ -187,6 +188,8 @@ public:
 
         const tDimType D = SimplexArray::D;
 
+        STAT_INC(Insphere);
+
         if constexpr (SimplexArray::hasSubdets) {
             Precision ae[D];
             Precision elift;
@@ -206,6 +209,8 @@ public:
             if (!((det > super::ispstaticfilter) || (-det > super::ispstaticfilter))) {
                 // the permanent needs to be calculated
 
+                STAT_INC(StaticFilterFail);
+
                 Precision ae[D], be[D], ce[D], de[D];
                 Precision aexbey, bexaey, bexcey, cexbey, cexdey, dexcey, dexaey, aexdey;
                 Precision aexcey, cexaey, bexdey, dexbey;
@@ -214,6 +219,7 @@ public:
                 Precision aexbeyplus, bexaeyplus, bexceyplus, cexbeyplus;
                 Precision cexdeyplus, dexceyplus, dexaeyplus, aexdeyplus;
                 Precision aexceyplus, cexaeyplus, bexdeyplus, dexbeyplus;
+                Precision errbound;
 
                 for (uint i = 0; i < D; ++i) {
                     ae[i] = points.coords(simplices.vertices(s, 0), i) - points.coords(pe, i);
@@ -277,6 +283,11 @@ public:
                                + (cexaeyplus + aexceyplus) * bezplus
                                + (aexbeyplus + bexaeyplus) * cezplus)
                               * dlift;
+
+                errbound = super::isperrboundA * permanent;
+                if ((det > errbound) || (-det > errbound)) {
+                    permanent = 0;
+                }
             }
 
             return std::make_tuple(det, permanent);
@@ -340,6 +351,8 @@ public:
                 return std::make_tuple(det, Precision(0));
             }
 
+            STAT_INC(StaticFilterFail);
+
             aezplus = Absolute(ae[Z]);
             bezplus = Absolute(be[Z]);
             cezplus = Absolute(ce[Z]);
@@ -389,6 +402,8 @@ public:
     static Precision
     insphere_adapt(const Precision permanent, const tIndexType &s, const tIndexType &pe, const SimplexArray &simplices,
                    const PointArray &points) {
+
+        STAT_INC(PermanentFilterFail);
 
         const tDimType D = SimplexArray::D;
         Precision a[D], b[D], c[D], d[D], e[D];
@@ -507,6 +522,8 @@ public:
 
         const tDimType D = SimplexArray::D;
 
+        STAT_ADD(Insphere, pe.size());
+
         if constexpr (SimplexArray::hasSubdets) {
             Vc::Vector<Precision> ae[D];
             Vc::Vector<Precision> elift;
@@ -528,6 +545,9 @@ public:
             permanent(maskFinal) = 0;
 
             if (Vc::any_of(!maskFinal)) {
+
+                STAT_ADD(StaticFilterFail, (!maskFinal).count());
+                STAT_UPD(PermanentFill, (!maskFinal).count());
                 // the permanent needs to be calculated
 
                 Vc::Vector<Precision> ae[D], be[D], ce[D], de[D];
@@ -538,6 +558,7 @@ public:
                 Vc::Vector<Precision> aexbeyplus, bexaeyplus, bexceyplus, cexbeyplus;
                 Vc::Vector<Precision> cexdeyplus, dexceyplus, dexaeyplus, aexdeyplus;
                 Vc::Vector<Precision> aexceyplus, cexaeyplus, bexdeyplus, dexbeyplus;
+                Vc::Vector<Precision> errbound;
 
                 for (uint i = 0; i < D; ++i) {
                     ae[i] = points.coords.vec(simplices.vertices.vec(s, 0), i) - points.coords.vec(pe, i);
@@ -585,22 +606,26 @@ public:
                 cexaeyplus = Vc::abs(cexaey);
                 bexdeyplus = Vc::abs(bexdey);
                 dexbeyplus = Vc::abs(dexbey);
-                permanent(!maskFinal) = ((cexdeyplus + dexceyplus) * bezplus
-                                         + (dexbeyplus + bexdeyplus) * cezplus
-                                         + (bexceyplus + cexbeyplus) * dezplus)
-                                        * alift
-                                        + ((dexaeyplus + aexdeyplus) * cezplus
-                                           + (aexceyplus + cexaeyplus) * dezplus
-                                           + (cexdeyplus + dexceyplus) * aezplus)
-                                          * blift
-                                        + ((aexbeyplus + bexaeyplus) * dezplus
-                                           + (bexdeyplus + dexbeyplus) * aezplus
-                                           + (dexaeyplus + aexdeyplus) * bezplus)
-                                          * clift
-                                        + ((bexceyplus + cexbeyplus) * aezplus
-                                           + (cexaeyplus + aexceyplus) * bezplus
-                                           + (aexbeyplus + bexaeyplus) * cezplus)
-                                          * dlift;
+                permanent = ((cexdeyplus + dexceyplus) * bezplus
+                             + (dexbeyplus + bexdeyplus) * cezplus
+                             + (bexceyplus + cexbeyplus) * dezplus)
+                            * alift
+                            + ((dexaeyplus + aexdeyplus) * cezplus
+                               + (aexceyplus + cexaeyplus) * dezplus
+                               + (cexdeyplus + dexceyplus) * aezplus)
+                              * blift
+                            + ((aexbeyplus + bexaeyplus) * dezplus
+                               + (bexdeyplus + dexbeyplus) * aezplus
+                               + (dexaeyplus + aexdeyplus) * bezplus)
+                              * clift
+                            + ((bexceyplus + cexbeyplus) * aezplus
+                               + (cexaeyplus + aexceyplus) * bezplus
+                               + (aexbeyplus + bexaeyplus) * cezplus)
+                              * dlift;
+
+                errbound = super::isperrboundA * permanent;
+                maskFinal = ((det > errbound) || (-det > errbound));
+                permanent(maskFinal) = 0;
             }
 
             return std::make_tuple(det, permanent);
@@ -660,10 +685,14 @@ public:
 
             det = (dlift * abc - clift * dab) + (blift * cda - alift * bcd);
 
-            if (Vc::all_of((det > super::ispstaticfilter) || (-det > super::ispstaticfilter))) {
+            auto maskFinal = (det > super::ispstaticfilter) || (-det > super::ispstaticfilter);
+            if (Vc::all_of(maskFinal)) {
                 permanent = 0;
                 return std::make_tuple(det, permanent);
             }
+
+            STAT_ADD(StaticFilterFail, (!maskFinal).count());
+            STAT_UPD(PermanentFill, (!maskFinal).count());
 
             aezplus = Vc::abs(ae[Z]);
             bezplus = Vc::abs(be[Z]);
@@ -699,7 +728,7 @@ public:
                           * dlift;
 
             errbound = super::isperrboundA * permanent;
-            auto maskFinal = ((det > errbound) || (-det > errbound));
+            maskFinal = ((det > errbound) || (-det > errbound));
             permanent(maskFinal) = 0;
 
             return std::make_tuple(det, permanent);

@@ -13,10 +13,13 @@
 #include <advisor-annotate.h>
 #endif
 
+#define ENABLE_STATS
+
+#include "Stats.h"
+
 #include "Generator.h"
 #include "Triangulator.h"
 #include "Checker.h"
-
 
 #include "FileReader.h"
 #include "TextTable.h"
@@ -70,6 +73,7 @@ timeValidityCheck(SimplexArray &simplices, const PointArray &points, const unsig
     bool valid = false;
 
     for (uint i = 0; i < reps; ++i) {
+        STAT_CLEAR;
         valid = checker.check(simplices, points);
     }
 
@@ -82,6 +86,11 @@ timeValidityCheck(SimplexArray &simplices, const PointArray &points, const unsig
     output.add(SimplexArray::hasSubdets ? std::to_string(tPrep) : "no");
     output.add(std::to_string(tCheck));
     output.add(std::to_string((SimplexArray::hasSubdets ? tPrep : 0) + tCheck));
+    output.add(std::to_string(STAT_GET(Insphere)));
+    output.add(std::to_string(STAT_GET(StaticFilterFail)));
+    output.add(std::to_string(STAT_GET(PermanentFill)));
+    output.add(std::to_string(STAT_GET(PermanentFilterFail)));
+    output.add(std::to_string(STAT_GET(AdaptiveFilterFail)));
     output.endOfRow();
 
 }
@@ -284,7 +293,7 @@ int main() {
 
     Generator<D, Precision> generator;
     auto cgal_points = generator.generate(N);
-    Predicates<Precision>::set_static_limits(1,1,1);
+    Predicates<Precision>::set_static_limits(1, 1, 1);
 
     PointArray<Traits<D, Precision, MemoryLayoutAoA, NoPrecomputation, NoOppVertex>> points_aoa;
     generator.convert(points_aoa, cgal_points);
@@ -382,6 +391,11 @@ int main() {
     output.add("Precomp");
     output.add("Check");
     output.add("Total");
+    output.add("InsphereCalls");
+    output.add("StaticFilterFail");
+    output.add("PermanentFill");
+    output.add("PermanentFilterFail");
+    output.add("AdaptiveFilterFail");
     output.endOfRow();
 
     timeValidityCheck(simplices_aoa_np, points_aoa, REPS, output);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Datastructures.h"
+#include "Stats.h"
 
 /*****************************************************************************/
 /*                                                                           */
@@ -485,7 +486,7 @@ protected:
     static constructor ctor;
 
 public:
-    static void set_static_limits(Precision maxx, Precision maxy, Precision maxz){
+    static void set_static_limits(Precision maxx, Precision maxy, Precision maxz) {
         // Calculate the two static filters for orient3d() and insphere() tests.
         // Added by H. Si, 2012-08-23.
 
@@ -500,8 +501,7 @@ public:
             Precision tmp = maxy;
             maxy = maxz;
             maxz = tmp;
-        }
-        else if (maxy < maxx) {
+        } else if (maxy < maxx) {
             Precision tmp = maxy;
             maxy = maxx;
             maxx = tmp;
@@ -3957,6 +3957,7 @@ protected:
             return det;
         }
 
+        STAT_INC(AdaptiveFilterFail);
         return insphere_exact(pa, pb, pc, pd, pe);
     }
 
