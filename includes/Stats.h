@@ -69,7 +69,7 @@ public:
 #else // ENABLE_STATS
 
 #define STAT_INC(stat) ((void)(0))
-#define STAT_GET 0
+#define STAT_GET(stat) 0
 #define STAT_ADD(stat, val) ((void)(0))
 #define STAT_UPD(stat, val) ((void)(0))
 #define STAT_CLEAR ((void)(0))
