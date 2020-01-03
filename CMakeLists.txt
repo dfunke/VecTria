@@ -64,7 +64,7 @@ if (Vc_FOUND)
     message(STATUS "VC Library found")
     include_directories(
             SYSTEM
-            ${Vc_INCLUDE_DIRS}
+            ${Vc_INCLUDE_DIR}
     )
     add_definitions(-DHAS_Vc)
 endif ()
