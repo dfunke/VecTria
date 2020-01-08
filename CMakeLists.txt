@@ -22,10 +22,15 @@ endif ()
 # search path
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/")
 
+# set default for MARCH
+if(NOT MARCH)
+    set(MARCH native)
+endif()
+
 # setup modern c++ flags
 string(REPLACE "-O2" "-O3" CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -std=c++17 -pedantic -Wall -Wextra")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native -std=c11 -pedantic -Wall -Wextra")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=${MARCH} -std=c++17 -pedantic -Wall -Wextra")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=${MARCH} -std=c11 -pedantic -Wall -Wextra")
 
 # add project include directories
 include_directories("${PROJECT_SOURCE_DIR}/includes")
@@ -72,3 +77,5 @@ endif ()
 
 # add all sources
 add_subdirectory(src)
+
+unset(MARCH CACHE)
