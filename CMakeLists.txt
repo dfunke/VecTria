@@ -69,6 +69,20 @@ if (Vc_FOUND)
     add_definitions(-DHAS_Vc)
 endif ()
 
+option(TESTS "Enable tests" OFF)
+if (TESTS)
+    find_package(GTest)
+    if(GTest_FOUND)
+        message(STATUS "GTest enabled")
+        include_directories(
+                SYSTEM
+                ${GTEST_INCLUDE_DIRS}
+        )
+    endif()
+endif ()
+
+
 
 # add all sources
 add_subdirectory(src)
+add_subdirectory(tests)
