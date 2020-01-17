@@ -22,10 +22,15 @@ endif ()
 # search path
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/")
 
+# set default for MARCH
+if(NOT MARCH)
+    set(MARCH native)
+endif()
+
 # setup modern c++ flags
 string(REPLACE "-O2" "-O3" CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -std=c++17 -pedantic -Wall -Wextra")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native -std=c11 -pedantic -Wall -Wextra")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=${MARCH} -std=c++17 -pedantic -Wall -Wextra")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=${MARCH} -std=c11 -pedantic -Wall -Wextra")
 
 # add project include directories
 include_directories("${PROJECT_SOURCE_DIR}/includes")
@@ -64,11 +69,27 @@ if (Vc_FOUND)
     message(STATUS "VC Library found")
     include_directories(
             SYSTEM
-            ${Vc_INCLUDE_DIRS}
+            ${Vc_INCLUDE_DIR}
     )
     add_definitions(-DHAS_Vc)
 endif ()
 
+option(TESTS "Enable tests" OFF)
+if (TESTS)
+    find_package(GTest)
+    if(GTest_FOUND)
+        message(STATUS "GTest enabled")
+        include_directories(
+                SYSTEM
+                ${GTEST_INCLUDE_DIRS}
+        )
+    endif()
+endif ()
+
+
 
 # add all sources
 add_subdirectory(src)
+add_subdirectory(tests)
+
+unset(MARCH CACHE)
