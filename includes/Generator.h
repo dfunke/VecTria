@@ -37,7 +37,7 @@ struct Generator<2, Precision> {
     template<class PointArray>
     void convert(PointArray &pa, const Points_2 &points) {
         pa.ensure(points.size());
-        for (const auto & cp : points) {
+        for (const auto &cp : points) {
             auto p = pa.get(cp.second);
 
             p[0] = cp.first.x();
@@ -72,12 +72,23 @@ struct Generator<3, Precision> {
     template<class PointArray>
     void convert(PointArray &pa, const Points_3 &points) {
         pa.ensure(points.size());
-        for (const auto & cp : points) {
+        for (const auto &cp : points) {
             auto p = pa.get(cp.second);
 
             p[0] = cp.first.x();
             p[1] = cp.first.y();
             p[2] = cp.first.z();
+        }
+    }
+
+    template<class PointArray>
+    void convert(Points_3 &points, const PointArray &pa) {
+        points.reserve(pa.size());
+        for (tIndexType i = 0; i < pa.size(); ++i) {
+            auto p = pa.get(i);
+
+            Point_3 p_cgal(p[0], p[1], p[3]);
+            points.push_back(std::make_pair(p_cgal, i));
         }
     }
 };

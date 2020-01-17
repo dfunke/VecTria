@@ -27,13 +27,17 @@ struct Traits {
     static constexpr tDimType D = pD;
 };
 
-template<tDimType D, typename Precision, class PointArray>
+template<class PointArray>
 class Point {
 
 private:
 
     PointArray &m_pointArray;
     tIndexType m_idx;
+
+public:
+    using Precision = typename PointArray::Precision;
+    static constexpr tDimType D = PointArray::D;
 
 public:
 
@@ -81,8 +85,8 @@ public:
     MemoryLayout<Precision, D> coords;
 
 private:
-    using tPoint = Point<D, Precision, PointArray>;
-    using tcPoint = Point<D, Precision, const PointArray>;
+    using tPoint = Point<PointArray>;
+    using tcPoint = Point<const PointArray>;
 
 public:
 
@@ -132,13 +136,16 @@ public:
 
 };
 
-template<tDimType D, class SimplexArray>
+template<class SimplexArray>
 class Simplex {
 
 private:
 
     SimplexArray &m_simplexArray;
     tIndexType m_idx;
+
+public:
+    static constexpr tDimType D = SimplexArray::D;
 
 public:
 
@@ -287,8 +294,8 @@ private:
 
     using pcBase = typename Traits::template PrecomputeStrategy<Traits>;
     using ovBase = typename Traits::template OppVertex<Traits>;
-    using tSimplex = Simplex<D, SimplexArray>;
-    using tcSimplex = Simplex<D, const SimplexArray>;
+    using tSimplex = Simplex<SimplexArray>;
+    using tcSimplex = Simplex<const SimplexArray>;
 
 public:
 

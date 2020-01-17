@@ -24,7 +24,6 @@
 #include "FileReader.h"
 #include "TextTable.h"
 
-
 template<class SimplexArray, class PointArray>
 void
 timeValidityCheck(SimplexArray &simplices, const PointArray &points, const unsigned short reps, TextTable &output) {

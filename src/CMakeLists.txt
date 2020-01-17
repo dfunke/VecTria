@@ -20,3 +20,9 @@ if (Vc_FOUND)
     target_link_libraries(main
             ${Vc_LIBRARIES})
 endif ()
+
+option(STATS "Detailed statistics" OFF)
+if (STATS)
+    message(WARNING "STATS is enabled")
+    add_definitions(-DENABLE_STATS)
+endif()

@@ -2,11 +2,11 @@
 
 #include <ostream>
 
-template<tDimType D, typename Precision, class PointArray>
-std::ostream &operator<<(std::ostream &os, const Point<D, Precision, PointArray> &p) {
+template<class PointArray>
+std::ostream &operator<<(std::ostream &os, const Point<PointArray> &p) {
     os << "[" << p[0];
 
-    for (tDimType d = 1; d < D; ++d) {
+    for (tDimType d = 1; d < PointArray::D; ++d) {
         os << ", " << p[d];
 
     }
@@ -15,18 +15,18 @@ std::ostream &operator<<(std::ostream &os, const Point<D, Precision, PointArray>
     return os;
 }
 
-template<tDimType D, class SimplexArray>
-std::ostream &operator<<(std::ostream &os, const Simplex<D, SimplexArray> &s) {
+template<class SimplexArray>
+std::ostream &operator<<(std::ostream &os, const Simplex<SimplexArray> &s) {
     os << "[" << s.vertex(0);
 
-    for (tDimType d = 1; d < D + 1; ++d) {
+    for (tDimType d = 1; d < SimplexArray::D + 1; ++d) {
         os << ", " << s.vertex(d);
 
     }
     os << "]";
     os << " (" << s.neighbor(0);
 
-    for (tDimType d = 1; d < D + 1; ++d) {
+    for (tDimType d = 1; d < SimplexArray::D + 1; ++d) {
         os << ", " << s.neighbor(d);
 
     }
