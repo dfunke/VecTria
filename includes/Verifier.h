@@ -43,8 +43,6 @@ struct Verifier {
     template<class SimplexArray1, class PointArray1, class SimplexArray2, class PointArray2>
     bool verify(const SimplexArray1 &simplices1, const PointArray1 &points1,
                 const SimplexArray2 &simplices2, const PointArray2 &points2) {
-        bool result = true;
-
         outStream << "Checking\n"
                   << "\tLayout1: "
                   << SimplexArray1::template MemoryLayout<typename SimplexArray1::Precision, SimplexArray1::D>::name()
@@ -55,7 +53,7 @@ struct Verifier {
         // check number of points
         if (points1.size() != points2.size()) {
             outStream << "Number points: " << points1.size() << " vs " << points2.size() << std::endl;
-            result = false;
+            return false;
         }
 
         // check points
@@ -65,14 +63,14 @@ struct Verifier {
 
             if (!(p1 == p2)) {
                 outStream << "Points " << i << " differ: (" << p1 << ") vs (" << p2 << ")" << std::endl;
-                result = false;
+                return false;
             }
         }
 
         // check number of simplices
         if (simplices1.size() != simplices2.size()) {
             outStream << "Number simplices: " << simplices1.size() << " vs " << simplices2.size() << std::endl;
-            result = false;
+            return false;
         }
 
         // check simplices
@@ -82,10 +80,11 @@ struct Verifier {
 
             if (!(s1 == s2)) {
                 outStream << "Simplices " << i << " differ: (" << s1 << ") vs (" << s2 << ")" << std::endl;
-                result = false;
+                return false;
             }
         }
 
+        bool result = true;
         if constexpr (SimplexArray2::isVectorized) {
             // vector of indices access
             for (Vc::Vector<tIndexType> i = Vc::Vector<tIndexType>::IndexesFromZero();
