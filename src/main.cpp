@@ -13,8 +13,6 @@
 #include <advisor-annotate.h>
 #endif
 
-#define ENABLE_STATS
-
 #include "Stats.h"
 
 #include "Generator.h"
