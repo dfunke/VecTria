@@ -2,6 +2,8 @@
 
 #include <ostream>
 
+#include "GeometryStructures.h"
+
 template<class PointArray>
 std::ostream &operator<<(std::ostream &os, const Point<PointArray> &p) {
     os << "[" << p[0];
