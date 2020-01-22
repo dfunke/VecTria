@@ -33,9 +33,9 @@ struct Triangulator<2> {
             tIndexType id = it->info();
             auto s = simplices.get(id);
 
-            s.vertex(0) = it->vertex(0)->info();
-            s.vertex(1) = it->vertex(1)->info();
-            s.vertex(2) = it->vertex(2)->info();
+            s.vertex(0) = T.is_infinite(it->vertex(0)) ? INF : it->vertex(0)->info();
+            s.vertex(1) = T.is_infinite(it->vertex(1)) ? INF : it->vertex(1)->info();
+            s.vertex(2) = T.is_infinite(it->vertex(2)) ? INF : it->vertex(2)->info();
 
             s.neighbor(0) = T.is_infinite(it->neighbor(0)) ? INF : it->neighbor(0)->info();
             s.neighbor(1) = T.is_infinite(it->neighbor(1)) ? INF : it->neighbor(1)->info();
@@ -81,10 +81,10 @@ struct Triangulator<3> {
             tIndexType id = it->info();
             auto s = simplices.get(id);
 
-            s.vertex(0) = it->vertex(0)->info();
-            s.vertex(1) = it->vertex(1)->info();
-            s.vertex(2) = it->vertex(2)->info();
-            s.vertex(3) = it->vertex(3)->info();
+            s.vertex(0) = T.is_infinite(it->vertex(0)) ? INF : it->vertex(0)->info();
+            s.vertex(1) = T.is_infinite(it->vertex(1)) ? INF : it->vertex(1)->info();
+            s.vertex(2) = T.is_infinite(it->vertex(2)) ? INF : it->vertex(2)->info();
+            s.vertex(3) = T.is_infinite(it->vertex(3)) ? INF : it->vertex(3)->info();
 
             s.neighbor(0) = T.is_infinite(it->neighbor(0)) ? INF : it->neighbor(0)->info();
             s.neighbor(1) = T.is_infinite(it->neighbor(1)) ? INF : it->neighbor(1)->info();
