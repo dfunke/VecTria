@@ -52,14 +52,14 @@ public:
     }
 
     inline void ensure(const tIndexType &i) {
-        if (m_size < i) {
+        if (m_size <= i) {
             base::resize(D * (i + 1));
             m_size = i + 1;
         }
     }
 
     inline void ensure(const tIndexType &i) const {
-        if (m_size < i) {
+        if (m_size <= i) {
             throw std::out_of_range(
                     "index " + std::to_string(i) + " is out of range " + std::to_string(size() / D));
         }
@@ -95,7 +95,7 @@ public:
     }
 
     inline void ensure(const tIndexType &i) {
-        if (m_size < i) {
+        if (m_size <= i) {
             for (tDimType d = 0; d < D; ++d) {
                 base::ACCESS(d).resize(i + 1);
             }
@@ -104,7 +104,7 @@ public:
     }
 
     inline void ensure(const tIndexType &i) const {
-        if (m_size < i) {
+        if (m_size <= i) {
             throw std::out_of_range(
                     "index " + std::to_string(i) + " is out of range " + std::to_string(size()));
         }
@@ -171,14 +171,14 @@ public:
     }
 
     inline void ensure(const tIndexType &i) {
-        if (m_size < i) {
+        if (m_size <= i) {
             base::resize(D * (i + 1) + (D < Vc::Vector<T>::size() ? Vc::Vector<T>::size() - D : 0));
             m_size = i + 1;
         }
     }
 
     inline void ensure(const tIndexType &i) const {
-        if (m_size < i) {
+        if (m_size <= i) {
             throw std::out_of_range(
                     "index " + std::to_string(i) + " is out of range " + std::to_string(size() / D));
         }
@@ -250,14 +250,14 @@ public:
     }
 
     inline void ensure(const tIndexType &i) {
-        if (m_size < i) {
+        if (m_size <= i) {
             base::resize(((i / N) + 1) * ND + (D < Vc::Vector<T>::size() ? Vc::Vector<T>::size() - D : 0));
             m_size = i + 1;
         }
     }
 
     inline void ensure(const tIndexType &i) const {
-        if (m_size < i) {
+        if (m_size <= i) {
             throw std::out_of_range(
                     "index " + std::to_string(i) + " is out of range " + std::to_string(size() / D));
         }
@@ -323,7 +323,7 @@ public:
     }
 
     inline void ensure(const tIndexType &i) {
-        if (m_size < i) {
+        if (m_size <= i) {
             for (tDimType d = 0; d < D; ++d) {
                 base::ACCESS(d).resize(i + 1);
             }
@@ -333,7 +333,7 @@ public:
 
     inline void ensure(const tIndexType &i) const {
 
-        if (m_size < i) {
+        if (m_size <= i) {
             throw std::out_of_range(
                     "index " + std::to_string(i) + " is out of range " + std::to_string(size()));
         }
