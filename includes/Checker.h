@@ -15,12 +15,11 @@ struct Checker<3, Precision> {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // vectorized
 
-    template<class SimplexArray, class PointArray, typename Ret=bool>
+    template<class SimplexArray, class PointArray, typename Ret=tIndexType>
     auto check(const SimplexArray &simplices,
                const PointArray &points) -> std::enable_if_t<SimplexArray::isVectorized, Ret> {
 
-        bool valid = true;
-
+        tIndexType invalid = 0;
 
         tIndexType i = 0;
         for (;
@@ -67,7 +66,7 @@ struct Checker<3, Precision> {
                 }
 
                 if (Vc::any_of((det < 0) & !Vc::simd_cast<Vc::Mask<Precision>>(maskInfOppVertex))) {
-                    valid = false;
+                    invalid += ((det < 0) & !Vc::simd_cast<Vc::Mask<Precision>>(maskInfOppVertex)).count();
                 }
 
             }
@@ -75,30 +74,30 @@ struct Checker<3, Precision> {
 
         for (; i < simplices.size(); ++i) {
             if (!check_simplex(i, simplices, points)) {
-                valid = false;
+                ++invalid;
             }
         }
 
-        return valid;
+        return invalid;
     }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // non-vectorized
 
-    template<class SimplexArray, class PointArray, typename Ret=bool>
+    template<class SimplexArray, class PointArray, typename Ret=tIndexType>
     auto check(const SimplexArray &simplices,
                const PointArray &points) -> std::enable_if_t<not SimplexArray::isVectorized, Ret> {
 
-        bool valid = true;
+        tIndexType invalid = 0;
 
         for (tIndexType i = 0; i < simplices.size(); ++i) {
 
             if (!check_simplex(i, simplices, points)) {
-                valid = false;
+                ++invalid;
             }
         }
 
-        return valid;
+        return invalid;
     }
 
     template<class SimplexArray, class PointArray>
