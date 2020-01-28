@@ -83,6 +83,7 @@ struct Generator<3, Precision> {
 
     template<class PointArray>
     void convert(Points_3 &points, const PointArray &pa) {
+        points.clear();
         points.reserve(pa.size());
         for (tIndexType i = 0; i < pa.size(); ++i) {
             auto p = pa.get(i);
