@@ -108,6 +108,66 @@ void timeDeltaCalc(TextTable &output) {
 
 }
 
+template<class PointArray, class SimplexArray>
+void timeKineticValid(TextTable &output) {
+
+    FileReader<PointArray::D, typename PointArray::Precision> freader;
+    PointArray pa, pb;
+    Points_3 p_cgal;
+
+    Triangulator<PointArray::D> triangulator;
+    Generator<PointArray::D, typename PointArray::Precision> conv;
+    Checker<SimplexArray::D, typename SimplexArray::Precision> checker;
+
+    const std::string DIR = "/home/funke/devel/KineticDelaunay/data/crack/";
+
+    std::filesystem::path p(DIR);
+    std::filesystem::directory_iterator start(p);
+    std::filesystem::directory_iterator end;
+
+    std::vector<std::filesystem::path> files;
+    std::copy(start, end, std::back_inserter(files));
+    std::sort(files.begin(), files.end());
+
+    freader.read(files[0], pa);
+    conv.convert(p_cgal, pa);
+
+    auto dt_cgal = triangulator.cgal(p_cgal);
+    auto dt = triangulator.template convert<SimplexArray>(dt_cgal);
+
+//    for (uint i = 1; i < files.size(); ++i) {
+    for (uint i = 1; i < 6; ++i) {
+        std::cout << "Processing file " << files[i] << std::endl;
+        freader.read(files[i], pb);
+
+        auto delta = pa.getDelta(pb);
+
+        double avg = 0;
+        for (tIndexType i = 0; i < delta.size(); ++i) {
+            for (tDimType d = 0; d < PointArray::D; ++d) {
+                avg += delta(i, d);
+            }
+        }
+        avg /= (PointArray::D * delta.size());
+
+        auto t1 = std::chrono::high_resolution_clock::now();
+        auto invalid = checker.check(dt, pb);
+        auto t2 = std::chrono::high_resolution_clock::now();
+
+        conv.convert(p_cgal, pb);
+        pa = pb;
+        dt_cgal = triangulator.cgal(p_cgal);
+        dt = triangulator.template convert<SimplexArray>(dt_cgal);
+
+        output.add(PointArray::template MemoryLayout<typename PointArray::Precision, PointArray::D>::name());
+        output.add(std::to_string(avg));
+        output.add(std::to_string(invalid / static_cast<double>(dt.size())));
+        output.add(std::to_string(std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count()));
+        output.endOfRow();
+    }
+
+}
+
 #define D 3
 #define Precision float
 
@@ -133,17 +193,17 @@ int main() {
     auto cgal_points = generator.generate(N);
     Predicates<Precision>::set_static_limits(1, 1, 1);
 
-    PointArray<Traits<D, Precision, MemoryLayoutAoA, NoPrecomputation, NoOppVertex>> points_aoa;
+    PointArray <Traits<D, Precision, MemoryLayoutAoA, NoPrecomputation, NoOppVertex>> points_aoa;
     generator.convert(points_aoa, cgal_points);
 
-    PointArray<Traits<D, Precision, MemoryLayoutPA, NoPrecomputation, NoOppVertex>> points_pa;
+    PointArray <Traits<D, Precision, MemoryLayoutPA, NoPrecomputation, NoOppVertex>> points_pa;
     generator.convert(points_pa, cgal_points);
 
 #ifdef HAS_Vc
-    PointArray<Traits<D, Precision, MemoryLayoutVectorizedAoA, NoPrecomputation, NoOppVertex>> points_vaoa;
+    PointArray <Traits<D, Precision, MemoryLayoutVectorizedAoA, NoPrecomputation, NoOppVertex>> points_vaoa;
     generator.convert(points_vaoa, cgal_points);
 
-    PointArray<Traits<D, Precision, MemoryLayoutVectorizedPA, NoPrecomputation, NoOppVertex>> points_vpa;
+    PointArray <Traits<D, Precision, MemoryLayoutVectorizedPA, NoPrecomputation, NoOppVertex>> points_vpa;
     generator.convert(points_vpa, cgal_points);
 #endif
 
@@ -163,53 +223,73 @@ int main() {
               << " is " << (b ? "" : "NOT ") << "valid" << std::endl;
 
 
-    auto simplices_aoa_np = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutAoA, NoPrecomputation, NoOppVertex>>>(
+    auto simplices_aoa_np = triangulator.convert < SimplexArray < Traits < D,
+    Precision, MemoryLayoutAoA, NoPrecomputation, NoOppVertex >> > (
             cgal_DT);
-    auto simplices_pa_np = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutPA, NoPrecomputation, NoOppVertex>>>(
-            cgal_DT);
-
-    auto simplices_aoa_wp = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutAoA, PrecomputeSubDets, NoOppVertex>>>(
-            cgal_DT);
-    auto simplices_pa_wp = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutPA, PrecomputeSubDets, NoOppVertex>>>(
+    auto simplices_pa_np = triangulator.convert < SimplexArray < Traits < D,
+    Precision, MemoryLayoutPA, NoPrecomputation, NoOppVertex >> > (
             cgal_DT);
 
-    auto simplices_aoa_np_opp = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutAoA, NoPrecomputation, WithOppVertex>>>(
+    auto simplices_aoa_wp = triangulator.convert < SimplexArray < Traits < D,
+    Precision, MemoryLayoutAoA, PrecomputeSubDets, NoOppVertex >> > (
             cgal_DT);
-    auto simplices_pa_np_opp = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutPA, NoPrecomputation, WithOppVertex>>>(
+    auto simplices_pa_wp = triangulator.convert < SimplexArray < Traits < D,
+    Precision, MemoryLayoutPA, PrecomputeSubDets, NoOppVertex >> > (
             cgal_DT);
 
-    auto simplices_aoa_wp_opp = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutAoA, PrecomputeSubDets, WithOppVertex>>>(
+    auto simplices_aoa_np_opp = triangulator.convert < SimplexArray < Traits < D,
+    Precision, MemoryLayoutAoA, NoPrecomputation, WithOppVertex >> > (
             cgal_DT);
-    auto simplices_pa_wp_opp = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutPA, PrecomputeSubDets, WithOppVertex>>>(
+    auto simplices_pa_np_opp = triangulator.convert < SimplexArray < Traits < D,
+    Precision, MemoryLayoutPA, NoPrecomputation, WithOppVertex >> > (
+            cgal_DT);
+
+    auto simplices_aoa_wp_opp = triangulator.convert < SimplexArray < Traits < D,
+    Precision, MemoryLayoutAoA, PrecomputeSubDets, WithOppVertex >> > (
+            cgal_DT);
+    auto simplices_pa_wp_opp = triangulator.convert < SimplexArray < Traits < D,
+    Precision, MemoryLayoutPA, PrecomputeSubDets, WithOppVertex >> > (
             cgal_DT);
 
 #ifdef HAS_Vc
-    auto simplices_vaoa_np = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutVectorizedAoA, NoPrecomputation, NoOppVertex>>>(
+    auto simplices_vaoa_np = triangulator.convert < SimplexArray < Traits < D,
+    Precision, MemoryLayoutVectorizedAoA, NoPrecomputation, NoOppVertex >> > (
             cgal_DT);
-    auto simplices_vpa_np = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutVectorizedPA, NoPrecomputation, NoOppVertex>>>(
+    auto simplices_vpa_np = triangulator.convert < SimplexArray < Traits < D,
+    Precision, MemoryLayoutVectorizedPA, NoPrecomputation, NoOppVertex >> > (
             cgal_DT);
-    auto simplices_vgpa_np = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutVectorizedGroupedPA, NoPrecomputation, NoOppVertex>>>(
-            cgal_DT);
-
-    auto simplices_vaoa_wp = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutVectorizedAoA, PrecomputeSubDets, NoOppVertex>>>(
-            cgal_DT);
-    auto simplices_vpa_wp = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutVectorizedPA, PrecomputeSubDets, NoOppVertex>>>(
-            cgal_DT);
-    auto simplices_vgpa_wp = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutVectorizedGroupedPA, PrecomputeSubDets, NoOppVertex>>>(
+    auto simplices_vgpa_np = triangulator.convert < SimplexArray < Traits < D,
+    Precision, MemoryLayoutVectorizedGroupedPA, NoPrecomputation, NoOppVertex >> > (
             cgal_DT);
 
-    auto simplices_vaoa_np_opp = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutVectorizedAoA, NoPrecomputation, WithOppVertex>>>(
+    auto simplices_vaoa_wp = triangulator.convert < SimplexArray < Traits < D,
+    Precision, MemoryLayoutVectorizedAoA, PrecomputeSubDets, NoOppVertex >> > (
             cgal_DT);
-    auto simplices_vpa_np_opp = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutVectorizedPA, NoPrecomputation, WithOppVertex>>>(
+    auto simplices_vpa_wp = triangulator.convert < SimplexArray < Traits < D,
+    Precision, MemoryLayoutVectorizedPA, PrecomputeSubDets, NoOppVertex >> > (
             cgal_DT);
-    auto simplices_vgpa_np_opp = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutVectorizedGroupedPA, NoPrecomputation, WithOppVertex>>>(
+    auto simplices_vgpa_wp = triangulator.convert < SimplexArray < Traits < D,
+    Precision, MemoryLayoutVectorizedGroupedPA, PrecomputeSubDets, NoOppVertex >> > (
             cgal_DT);
 
-    auto simplices_vaoa_wp_opp = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutVectorizedAoA, PrecomputeSubDets, WithOppVertex>>>(
+    auto simplices_vaoa_np_opp = triangulator.convert < SimplexArray < Traits < D,
+    Precision, MemoryLayoutVectorizedAoA, NoPrecomputation, WithOppVertex >> > (
             cgal_DT);
-    auto simplices_vpa_wp_opp = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutVectorizedPA, PrecomputeSubDets, WithOppVertex>>>(
+    auto simplices_vpa_np_opp = triangulator.convert < SimplexArray < Traits < D,
+    Precision, MemoryLayoutVectorizedPA, NoPrecomputation, WithOppVertex >> > (
             cgal_DT);
-    auto simplices_vgpa_wp_opp = triangulator.convert<SimplexArray<Traits<D, Precision, MemoryLayoutVectorizedGroupedPA, PrecomputeSubDets, WithOppVertex>>>(
+    auto simplices_vgpa_np_opp = triangulator.convert < SimplexArray < Traits < D,
+    Precision, MemoryLayoutVectorizedGroupedPA, NoPrecomputation, WithOppVertex >> > (
+            cgal_DT);
+
+    auto simplices_vaoa_wp_opp = triangulator.convert < SimplexArray < Traits < D,
+    Precision, MemoryLayoutVectorizedAoA, PrecomputeSubDets, WithOppVertex >> > (
+            cgal_DT);
+    auto simplices_vpa_wp_opp = triangulator.convert < SimplexArray < Traits < D,
+    Precision, MemoryLayoutVectorizedPA, PrecomputeSubDets, WithOppVertex >> > (
+            cgal_DT);
+    auto simplices_vgpa_wp_opp = triangulator.convert < SimplexArray < Traits < D,
+    Precision, MemoryLayoutVectorizedGroupedPA, PrecomputeSubDets, WithOppVertex >> > (
             cgal_DT);
 
 #endif
@@ -223,50 +303,50 @@ int main() {
 #endif
 
     TextTable output;
-    output.add("Layout");
-    output.add("OppVertex");
-    output.add("valid");
-    output.add("Precomp");
-    output.add("Check");
-    output.add("Total");
-    output.add("InsphereCalls");
-    output.add("StaticFilterFail");
-    output.add("PermanentFill");
-    output.add("PermanentFilterFail");
-    output.add("AdaptiveFilterFail");
-    output.endOfRow();
-
-    timeValidityCheck(simplices_aoa_np, points_aoa, REPS, output);
-    timeValidityCheck(simplices_pa_np, points_pa, REPS, output);
-
-    timeValidityCheck(simplices_aoa_wp, points_aoa, REPS, output);
-    timeValidityCheck(simplices_pa_wp, points_pa, REPS, output);
-
-    timeValidityCheck(simplices_aoa_np_opp, points_aoa, REPS, output);
-    timeValidityCheck(simplices_pa_np_opp, points_pa, REPS, output);
-
-    timeValidityCheck(simplices_aoa_wp_opp, points_aoa, REPS, output);
-    timeValidityCheck(simplices_pa_wp_opp, points_pa, REPS, output);
-
-#ifdef HAS_Vc
-    timeValidityCheck(simplices_vaoa_np, points_vaoa, REPS, output);
-    timeValidityCheck(simplices_vpa_np, points_vpa, REPS, output);
-    timeValidityCheck(simplices_vgpa_np, points_vpa, REPS, output);
-
-    timeValidityCheck(simplices_vaoa_wp, points_vaoa, REPS, output);
-    timeValidityCheck(simplices_vpa_wp, points_vpa, REPS, output);
-    timeValidityCheck(simplices_vgpa_wp, points_vpa, REPS, output);
-
-    timeValidityCheck(simplices_vaoa_np_opp, points_vaoa, REPS, output);
-    timeValidityCheck(simplices_vpa_np_opp, points_vpa, REPS, output);
-    timeValidityCheck(simplices_vgpa_np_opp, points_vpa, REPS, output);
-
-    timeValidityCheck(simplices_vaoa_wp_opp, points_vaoa, REPS, output);
-    timeValidityCheck(simplices_vpa_wp_opp, points_vpa, REPS, output);
-    timeValidityCheck(simplices_vgpa_wp_opp, points_vpa, REPS, output);
-#endif
-
-    std::cout << output;
+//    output.add("Layout");
+//    output.add("OppVertex");
+//    output.add("valid");
+//    output.add("Precomp");
+//    output.add("Check");
+//    output.add("Total");
+//    output.add("InsphereCalls");
+//    output.add("StaticFilterFail");
+//    output.add("PermanentFill");
+//    output.add("PermanentFilterFail");
+//    output.add("AdaptiveFilterFail");
+//    output.endOfRow();
+//
+//    timeValidityCheck(simplices_aoa_np, points_aoa, REPS, output);
+//    timeValidityCheck(simplices_pa_np, points_pa, REPS, output);
+//
+//    timeValidityCheck(simplices_aoa_wp, points_aoa, REPS, output);
+//    timeValidityCheck(simplices_pa_wp, points_pa, REPS, output);
+//
+//    timeValidityCheck(simplices_aoa_np_opp, points_aoa, REPS, output);
+//    timeValidityCheck(simplices_pa_np_opp, points_pa, REPS, output);
+//
+//    timeValidityCheck(simplices_aoa_wp_opp, points_aoa, REPS, output);
+//    timeValidityCheck(simplices_pa_wp_opp, points_pa, REPS, output);
+//
+//#ifdef HAS_Vc
+//    timeValidityCheck(simplices_vaoa_np, points_vaoa, REPS, output);
+//    timeValidityCheck(simplices_vpa_np, points_vpa, REPS, output);
+//    timeValidityCheck(simplices_vgpa_np, points_vpa, REPS, output);
+//
+//    timeValidityCheck(simplices_vaoa_wp, points_vaoa, REPS, output);
+//    timeValidityCheck(simplices_vpa_wp, points_vpa, REPS, output);
+//    timeValidityCheck(simplices_vgpa_wp, points_vpa, REPS, output);
+//
+//    timeValidityCheck(simplices_vaoa_np_opp, points_vaoa, REPS, output);
+//    timeValidityCheck(simplices_vpa_np_opp, points_vpa, REPS, output);
+//    timeValidityCheck(simplices_vgpa_np_opp, points_vpa, REPS, output);
+//
+//    timeValidityCheck(simplices_vaoa_wp_opp, points_vaoa, REPS, output);
+//    timeValidityCheck(simplices_vpa_wp_opp, points_vpa, REPS, output);
+//    timeValidityCheck(simplices_vgpa_wp_opp, points_vpa, REPS, output);
+//#endif
+//
+//    std::cout << output;
 
 
 //    output.clear();
@@ -286,6 +366,17 @@ int main() {
 //#endif
 //
 //    std::cout << output;
+
+    output.clear();
+    output.add("Layout");
+    output.add("AvgDelta");
+    output.add("#invalid");
+    output.add("Time Check");
+    output.endOfRow();
+    timeKineticValid<PointArray < Traits < D, Precision, MemoryLayoutPA, NoPrecomputation, NoOppVertex>>,
+    SimplexArray < Traits < D, Precision, MemoryLayoutPA, NoPrecomputation, NoOppVertex >> > (
+            output);
+    std::cout << output;
 
     return 0;
 
