@@ -111,6 +111,14 @@ void timeDeltaCalc(TextTable &output) {
 template<class PointArray, class SimplexArray>
 void timeKineticValid(TextTable &output) {
 
+    output.add("Layout");
+    output.add("AvgDelta");
+    output.add("#points");
+    output.add("#simplices");
+    output.add("% invalid");
+    output.add("Time Check");
+    output.endOfRow();
+
     FileReader<PointArray::D, typename PointArray::Precision> freader;
     PointArray pa, pb;
     Points_3 p_cgal;
@@ -161,6 +169,8 @@ void timeKineticValid(TextTable &output) {
 
         output.add(PointArray::template MemoryLayout<typename PointArray::Precision, PointArray::D>::name());
         output.add(std::to_string(avg));
+        output.add(std::to_string(pa.size()));
+        output.add(std::to_string(dt.size()));
         output.add(std::to_string(invalid / static_cast<double>(dt.size())));
         output.add(std::to_string(std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count()));
         output.endOfRow();
