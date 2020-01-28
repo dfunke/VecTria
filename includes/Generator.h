@@ -87,7 +87,7 @@ struct Generator<3, Precision> {
         for (tIndexType i = 0; i < pa.size(); ++i) {
             auto p = pa.get(i);
 
-            Point_3 p_cgal(p[0], p[1], p[3]);
+            Point_3 p_cgal(p[0], p[1], p[2]);
             points.push_back(std::make_pair(p_cgal, i));
         }
     }
