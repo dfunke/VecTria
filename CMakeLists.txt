@@ -27,16 +27,24 @@ if(NOT MARCH)
     set(MARCH native)
 endif()
 
-# setup modern c++ flags
-string(REPLACE "-O2" "-O3" CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=${MARCH} -std=c++17 -pedantic -Wall -Wextra")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=${MARCH} -std=c11 -pedantic -Wall -Wextra")
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSTIONS ON)
 
-# add project include directories
-include_directories("${PROJECT_SOURCE_DIR}/includes")
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_C_EXTENSTIONS ON)
 
 find_package(CGAL REQUIRED)
 include(${CGAL_USE_FILE})
+
+# setup modern c++ flags
+string(REPLACE "-O2" "-O3" CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=${MARCH} -pedantic -Wall -Wextra")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=${MARCH} -pedantic -Wall -Wextra")
+
+# add project include directories
+include_directories("${PROJECT_SOURCE_DIR}/includes")
 
 option(VTUNE "Enable VTune instrumentation if found" OFF)
 if (VTUNE)
