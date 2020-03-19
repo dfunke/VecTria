@@ -7,9 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		F60F902422E1D91400C4274E /* libCGAL.13.0.3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = F60F902322E1D91400C4274E /* libCGAL.13.0.3.dylib */; };
-		F60F902622E1D93300C4274E /* libCGAL_Core.13.0.3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = F60F902522E1D93300C4274E /* libCGAL_Core.13.0.3.dylib */; };
 		F60F902822E1D97100C4274E /* libVc.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F60F902722E1D97100C4274E /* libVc.a */; };
+		F672845624238AAD0030C5AB /* Predicates.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F672845524238AAD0030C5AB /* Predicates.cpp */; };
 		F6E52A96209B171300FF501A /* libboost_system-mt.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = F6E52A91209B171300FF501A /* libboost_system-mt.dylib */; };
 		F6E52A97209B171300FF501A /* libgmp.10.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = F6E52A92209B171300FF501A /* libgmp.10.dylib */; };
 		F6E52A98209B171300FF501A /* libboost_thread-mt.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = F6E52A93209B171300FF501A /* libboost_thread-mt.dylib */; };
@@ -32,6 +31,15 @@
 		F60F902322E1D91400C4274E /* libCGAL.13.0.3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libCGAL.13.0.3.dylib; path = ../../../../usr/local/Cellar/cgal/4.14_1/lib/libCGAL.13.0.3.dylib; sourceTree = "<group>"; };
 		F60F902522E1D93300C4274E /* libCGAL_Core.13.0.3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libCGAL_Core.13.0.3.dylib; path = ../../../../usr/local/Cellar/cgal/4.14_1/lib/libCGAL_Core.13.0.3.dylib; sourceTree = "<group>"; };
 		F60F902722E1D97100C4274E /* libVc.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libVc.a; path = ../../../../usr/local/lib/libVc.a; sourceTree = "<group>"; };
+		F672844D24238A9B0030C5AB /* Generator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Generator.h; sourceTree = "<group>"; };
+		F672844E24238A9B0030C5AB /* Stats.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Stats.h; sourceTree = "<group>"; };
+		F672844F24238A9B0030C5AB /* Checker.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Checker.h; sourceTree = "<group>"; };
+		F672845024238A9B0030C5AB /* CGAL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CGAL.h; sourceTree = "<group>"; };
+		F672845124238A9B0030C5AB /* Verifier.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Verifier.h; sourceTree = "<group>"; };
+		F672845224238A9B0030C5AB /* Triangulator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Triangulator.h; sourceTree = "<group>"; };
+		F672845324238A9B0030C5AB /* TextTable.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TextTable.h; sourceTree = "<group>"; };
+		F672845424238A9B0030C5AB /* FileReader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FileReader.h; sourceTree = "<group>"; };
+		F672845524238AAD0030C5AB /* Predicates.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Predicates.cpp; path = src/Predicates.cpp; sourceTree = "<group>"; };
 		F6914A7F22E1CCA900E58257 /* dummy_fpu_control.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = dummy_fpu_control.h; sourceTree = "<group>"; };
 		F6AB48A322442A5000EB3520 /* Datastructures.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Datastructures.h; sourceTree = "<group>"; };
 		F6CDBEC1224CB52C00A84D5E /* libCGAL.13.0.2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libCGAL.13.0.2.dylib; path = ../../../../usr/local/Cellar/cgal/4.13/lib/libCGAL.13.0.2.dylib; sourceTree = "<group>"; };
@@ -54,8 +62,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				F60F902822E1D97100C4274E /* libVc.a in Frameworks */,
-				F60F902422E1D91400C4274E /* libCGAL.13.0.3.dylib in Frameworks */,
-				F60F902622E1D93300C4274E /* libCGAL_Core.13.0.3.dylib in Frameworks */,
 				F6E52A96209B171300FF501A /* libboost_system-mt.dylib in Frameworks */,
 				F6E52A97209B171300FF501A /* libgmp.10.dylib in Frameworks */,
 				F6E52A98209B171300FF501A /* libboost_thread-mt.dylib in Frameworks */,
@@ -68,6 +74,14 @@
 		F6AB48A222442A1E00EB3520 /* includes */ = {
 			isa = PBXGroup;
 			children = (
+				F672845024238A9B0030C5AB /* CGAL.h */,
+				F672844F24238A9B0030C5AB /* Checker.h */,
+				F672845424238A9B0030C5AB /* FileReader.h */,
+				F672844D24238A9B0030C5AB /* Generator.h */,
+				F672844E24238A9B0030C5AB /* Stats.h */,
+				F672845324238A9B0030C5AB /* TextTable.h */,
+				F672845224238A9B0030C5AB /* Triangulator.h */,
+				F672845124238A9B0030C5AB /* Verifier.h */,
 				F6914A7F22E1CCA900E58257 /* dummy_fpu_control.h */,
 				F6CDBEC722568E0C00A84D5E /* GeometryStructures.h */,
 				F6CDBEC922568E0C00A84D5E /* MathTools.h */,
@@ -80,6 +94,7 @@
 		F6E52A7B209B041E00FF501A = {
 			isa = PBXGroup;
 			children = (
+				F672845524238AAD0030C5AB /* Predicates.cpp */,
 				F6AB48A222442A1E00EB3520 /* includes */,
 				F6E52A9920A31CCE00FF501A /* main.cpp */,
 				F6E52A85209B041E00FF501A /* Products */,
@@ -138,7 +153,7 @@
 		F6E52A7C209B041E00FF501A /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0930;
+				LastUpgradeCheck = 1130;
 				ORGANIZATIONNAME = "Daniel Funke";
 				TargetAttributes = {
 					F6E52A83209B041E00FF501A = {
@@ -170,6 +185,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F6E52A9A20A31CCE00FF501A /* main.cpp in Sources */,
+				F672845624238AAD0030C5AB /* Predicates.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -182,7 +198,7 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
@@ -227,7 +243,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
@@ -240,7 +256,7 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
@@ -279,7 +295,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = macosx;
 			};
@@ -290,6 +306,7 @@
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
 				CLANG_WARN_DOCUMENTATION_COMMENTS = NO;
+				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				GCC_C_LANGUAGE_STANDARD = c11;
 				GCC_PREPROCESSOR_DEFINITIONS = "HAS_Vc=1";
@@ -312,6 +329,7 @@
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
 				CLANG_WARN_DOCUMENTATION_COMMENTS = NO;
+				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				GCC_C_LANGUAGE_STANDARD = c11;
 				GCC_PREPROCESSOR_DEFINITIONS = "HAS_Vc=1";
