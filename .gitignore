@@ -18,3 +18,5 @@ cmake-build-*
 .pydevproject
 .settings
 .idea
+.DS_Store
+xcuserdata
