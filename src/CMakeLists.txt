@@ -3,8 +3,11 @@ add_executable(main
         Predicates.cpp
         )
 
-target_link_libraries(main
-        stdc++fs)
+if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+	target_link_libraries(main
+	        stdc++fs
+	)
+endif()
 
 if (VTUNE_FOUND)
     target_link_libraries(main
