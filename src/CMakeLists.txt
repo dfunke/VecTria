@@ -1,6 +1,7 @@
 add_executable(main
         main.cpp
         Predicates.cpp
+        Logger.cpp
         )
 
 if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
