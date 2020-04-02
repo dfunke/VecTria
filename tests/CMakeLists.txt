@@ -1,6 +1,7 @@
 if (TESTS)
     add_executable(test
             main.cpp
+            ../src/Predicates.cpp
             ../src/Logger.cpp)
 
     if (GTest_FOUND)
