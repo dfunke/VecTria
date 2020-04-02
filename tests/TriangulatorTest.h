@@ -5,6 +5,7 @@
 #include "Triangulator.h"
 #include "Predicates.h"
 #include "GeometryStructures.h"
+#include "SimplexOrientationFixer.h"
 
 struct TriangulatorTestContext {
     static constexpr tDimType D = 3;
@@ -37,6 +38,11 @@ struct TriangulatorTestContext {
         assert(neighborPosition != INF);
         farVertexPosition = delaunayTriangulation.get(simplexIndex).vertex(neighborPosition);
     }
+
+    void fixSimlexOrientations() {
+        SimplexOrientationFixer<PointArrayT, SimplexArrayT> fix(&points, &delaunayTriangulation);
+        fix();
+    }
 };
 
 TEST(Triangulator, SimplexOrientation) {
@@ -51,6 +57,29 @@ TEST(Triangulator, SimplexOrientation) {
 
 TEST(Triangulator, SimplexDelaunayProperty) {
     TriangulatorTestContext context;
+
+    auto adjacentSimplexId = context.neighborSimplexIndex;
+    auto farVertexId = context.farVertexPosition;
+    auto insphereResult = TriangulatorTestContext::Pred::pred_insphere(adjacentSimplexId, farVertexId,
+                                                                       context.delaunayTriangulation,
+                                                                       context.points);
+    EXPECT_LE(insphereResult, 0);
+}
+
+TEST(Triangulator, SimplexOrientationAfterOrientationFix) {
+    TriangulatorTestContext context;
+    context.fixSimlexOrientations();
+
+    auto orientation = TriangulatorTestContext::Pred::pred_orient(context.simplexIndex,
+                                                                  context.delaunayTriangulation,
+                                                                  context.points);
+    EXPECT_GT(orientation, 0);
+}
+
+
+TEST(Triangulator, SimplexDelaunayPropertyAfterOrientationFix) {
+    TriangulatorTestContext context;
+    context.fixSimlexOrientations();
 
     auto adjacentSimplexId = context.neighborSimplexIndex;
     auto farVertexId = context.farVertexPosition;
