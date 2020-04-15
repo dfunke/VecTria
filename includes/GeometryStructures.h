@@ -27,6 +27,32 @@ struct Traits {
     static constexpr tDimType D = pD;
 };
 
+template<tDimType D, typename Precision>
+using tVector = std::array<Precision, D>;
+
+template<typename Vector>
+struct Box {
+    
+    Box() { }
+    
+    Box(const Vector &_low, const Vector &_high) : low(_low), high(_high) { }
+    
+    Vector low;
+    Vector high;
+    
+    template<typename Point>
+    bool contains(const Point & p) const {
+        static_assert(Point::D == std::tuple_size<Vector>::value);
+        
+        for(tDimType d = 0; d < Point::D; ++d){
+            if(!(low[d] <= p[d] && p[d] < high[d]))
+                return false;
+        }
+        
+        return true;
+    }
+};
+
 template<class PointArray>
 class Point {
 

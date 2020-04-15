@@ -26,16 +26,16 @@ struct FileReader<3, Precision> {
         assert(line == "ITEM: TIMESTEP");
 
         std::getline(f, line);
-        tIndexType timestep = std::stol(line);
+        tIndexType timestep = static_cast<tIndexType>(std::stol(line));
 
         // the timestep data is weird, use filename instead for now
-        timestep = stol(std::filesystem::path(filename).stem().stem().string());
+        timestep = static_cast<tIndexType>(stol(std::filesystem::path(filename).stem().stem().string()));
 
         // second item is the number of atoms
         std::getline(f, line);
         assert (line == "ITEM: NUMBER OF ATOMS");
         std::getline(f, line);
-        tIndexType n = stol(line);
+        tIndexType n = static_cast<tIndexType>(stol(line));
 
 
         // third item is the bounding box
@@ -62,7 +62,7 @@ struct FileReader<3, Precision> {
             std::vector<std::string> splits;
             boost::split(splits, line, [](char c) { return c == ' '; });
 
-            auto p = pa.get(std::stol(splits[0]) - 1);
+            auto p = pa.get(static_cast<tIndexType>(std::stol(splits[0]) - 1));
 
             p[0] = static_cast<Precision>(std::stod(splits[2]));
             p[1] = static_cast<Precision>(std::stod(splits[3]));

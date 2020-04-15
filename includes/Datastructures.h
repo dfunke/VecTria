@@ -24,9 +24,9 @@ constexpr tDimType Z = 2;
 #define ACCESS operator[]
 #endif
 
-template<typename Precision>
-using tFloatVector = std::vector<Precision>;
-using tIndexVector = std::vector<tIndexType>;
+//template<typename Precision>
+//using tFloatVector = std::vector<Precision>;
+//using tIndexVector = std::vector<tIndexType>;
 
 template<typename T, tDimType D>
 class MemoryLayoutPA : private std::vector<T> {

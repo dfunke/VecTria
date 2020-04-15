@@ -107,7 +107,7 @@ private:
     }
 
     unsigned columns() const {
-        return _rows[0].size();
+        return static_cast<unsigned>(_rows[0].size());
     }
 
     void determineWidths() const {
@@ -115,7 +115,7 @@ private:
         for (auto rowIterator = _rows.begin(); rowIterator != _rows.end(); ++rowIterator) {
             Row const &row = *rowIterator;
             for (unsigned i = 0; i < row.size(); ++i) {
-                _width[i] = _width[i] > row[i].size() ? _width[i] : row[i].size();
+                _width[i] = _width[i] > row[i].size() ? _width[i] : static_cast<unsigned>(row[i].size());
             }
         }
     }
