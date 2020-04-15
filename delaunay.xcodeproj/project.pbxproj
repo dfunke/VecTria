@@ -314,12 +314,7 @@
 					/usr/local/include,
 					includes,
 				);
-				LIBRARY_SEARCH_PATHS = (
-					/usr/local/lib,
-					/usr/local/Cellar/cgal/4.14_1/lib,
-					/usr/local/Cellar/boost/1.70.0/lib,
-					/usr/local/Cellar/gmp/6.1.2_2/lib,
-				);
+				LIBRARY_SEARCH_PATHS = /usr/local/lib;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -337,12 +332,7 @@
 					/usr/local/include,
 					includes,
 				);
-				LIBRARY_SEARCH_PATHS = (
-					/usr/local/lib,
-					/usr/local/Cellar/cgal/4.14_1/lib,
-					/usr/local/Cellar/boost/1.70.0/lib,
-					/usr/local/Cellar/gmp/6.1.2_2/lib,
-				);
+				LIBRARY_SEARCH_PATHS = /usr/local/lib;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
