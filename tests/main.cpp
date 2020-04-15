@@ -4,6 +4,7 @@
 #include "MemoryLayoutVectorizedPATest.h"
 #include "MemoryLayoutVectorizedGroupedPATest.h"
 #include "MemoryLayoutVectorizedAoATest.h"
+#include "TriangulatorTest.h"
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
