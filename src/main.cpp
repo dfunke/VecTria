@@ -39,7 +39,8 @@ timeValidityCheck(SimplexArray &simplices, const PointArray &points, const unsig
 
     for (uint i = 0; i < reps; ++i) {
         STAT_CLEAR;
-        valid = checker.check(simplices, points);
+        auto[valid, orient] = checker.check(simplices, points);
+        // std::cout << "valid: " << valid << " orient: " << orient << std::endl;
     }
 
     auto t4 = std::chrono::high_resolution_clock::now();
@@ -112,11 +113,16 @@ void timeDeltaCalc(TextTable &output) {
 template<class PointArray, class SimplexArray>
 void timeKineticValid(TextTable &output) {
 
-    output.add("Layout");
+    output.add("Timestep");
+    output.add("MinDelta");
     output.add("AvgDelta");
+    output.add("MaxDelta");
     output.add("#points");
     output.add("#simplices");
+    output.add("# invalid");
     output.add("% invalid");
+    output.add("# wrongOrient");
+    output.add("% wrongOrient");
     output.add("Time Check");
     output.endOfRow();
 
@@ -137,43 +143,92 @@ void timeKineticValid(TextTable &output) {
 
     std::vector<std::filesystem::path> files;
     std::copy(start, end, std::back_inserter(files));
-    std::sort(files.begin(), files.end());
+    std::sort(files.begin(), files.end(), [](const std::filesystem::path &a, const std::filesystem::path &b) {
+        auto av = stol(a.stem().stem().string());
+        auto bv = stol(b.stem().stem().string());
+        return av < bv;
+    });
 
-    freader.read(files[0], pa);
+    auto[timestep, bounds] = freader.read(files[0], pa);
+    Predicates<typename PointArray::Precision>::set_static_limits(
+            std::max(std::abs(bounds.low[0]), std::abs(bounds.high[0])),
+            std::max(std::abs(bounds.low[1]), std::abs(bounds.high[1])),
+            std::max(std::abs(bounds.low[2]), std::abs(bounds.high[2])));
+
     conv.convert(p_cgal, pa);
 
     auto dt_cgal = triangulator.cgal(p_cgal);
     auto dt = triangulator.template convert<SimplexArray>(dt_cgal);
 
-//    for (uint i = 1; i < files.size(); ++i) {
+#ifdef NDEBUG
+    for (uint i = 1; i < files.size(); ++i) {
+#else
     for (uint i = 1; i < 6; ++i) {
-        std::cout << "Processing file " << files[i] << std::endl;
-        freader.read(files[i], pb);
+#endif
+        auto[timestep, bounds] = freader.read(files[i], pb);
+        Predicates<typename PointArray::Precision>::set_static_limits(
+                std::max(std::abs(bounds.low[0]), std::abs(bounds.high[0])),
+                std::max(std::abs(bounds.low[1]), std::abs(bounds.high[1])),
+                std::max(std::abs(bounds.low[2]), std::abs(bounds.high[2])));
+
+        std::cout << "Processing timestep " << timestep << std::endl;
+        std::cout << "Bounds " << bounds << std::endl;
 
         auto delta = pa.getDelta(pb);
 
         double avg = 0;
+        double max = std::numeric_limits<double>::min();
+        double min = std::numeric_limits<double>::max();
+
         for (tIndexType i = 0; i < delta.size(); ++i) {
             for (tDimType d = 0; d < PointArray::D; ++d) {
                 avg += delta(i, d);
+
+                if (delta(i, d) > (bounds.high[d] - bounds.low[d]) / 2) {
+                    std::cout << "a: " << Point(pa, i) << " b: " << Point(pb, i) << std::endl;
+                    pb.coords(i, d) -= (bounds.high[d] - bounds.low[d]);
+                    delta(i, d) = pb.coords(i, d) - pa.coords(i, d);
+                    std::cout << "new b: " << Point(pb, i) << std::endl;
+                }
+
+                if (delta(i, d) < -(bounds.high[d] - bounds.low[d]) / 2) {
+                    std::cout << "a: " << Point(pa, i) << " b: " << Point(pb, i) << std::endl;
+                    pb.coords(i, d) += (bounds.high[d] - bounds.low[d]);
+                    delta(i, d) = pb.coords(i, d) - pa.coords(i, d);
+                    std::cout << "new b: " << Point(pb, i) << std::endl;
+                }
+
+                if (delta(i, d) < min) {
+                    min = delta(i, d);
+                }
+
+                if (delta(i, d) > max) {
+                    max = delta(i, d);
+                }
             }
         }
+
         avg /= (PointArray::D * delta.size());
 
         auto t1 = std::chrono::high_resolution_clock::now();
-        auto invalid = checker.check(dt, pb);
+        auto[invalid, wrongOrient] = checker.check(dt, pb);
         auto t2 = std::chrono::high_resolution_clock::now();
 
-        conv.convert(p_cgal, pb);
+	conv.convert(p_cgal, pb);
         pa = pb;
         dt_cgal = triangulator.cgal(p_cgal);
         dt = triangulator.template convert<SimplexArray>(dt_cgal);
 
-        output.add(PointArray::template MemoryLayout<typename PointArray::Precision, PointArray::D>::name());
+        output.add(std::to_string(timestep));
+        output.add(std::to_string(min));
         output.add(std::to_string(avg));
+        output.add(std::to_string(max));
         output.add(std::to_string(pa.size()));
         output.add(std::to_string(dt.size()));
+        output.add(std::to_string(invalid));
         output.add(std::to_string(invalid / static_cast<double>(dt.size())));
+        output.add(std::to_string(wrongOrient));
+        output.add(std::to_string(wrongOrient / static_cast<double>(dt.size())));
         output.add(std::to_string(std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count()));
         output.endOfRow();
     }
