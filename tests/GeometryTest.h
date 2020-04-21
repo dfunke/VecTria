@@ -10,7 +10,7 @@ TEST(Geometry3D, inSphere) {
     EXPECT_EQ(layout(0, 0), 11);
 }
 
-TEST(MemoryLayoutPA, ReadWriteLength2Dimension1) {
+TEST(Geometry3D, ReadWriteLength2Dimension1) {
     MemoryLayoutPA<int, 1> layout;
     layout.ensure(1);
     layout(0, 0) = 11;
