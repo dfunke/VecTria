@@ -5,6 +5,7 @@
 #include "MemoryLayoutVectorizedGroupedPATest.h"
 #include "MemoryLayoutVectorizedAoATest.h"
 #include "TriangulatorTest.h"
+#include "ComprehensiveTriangulatorOrientationTest.h"
 
 #include "GeometryTest.h"
 
