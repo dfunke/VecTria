@@ -6,7 +6,7 @@
 #include <sstream>
 #include <memory>
 
-#include "ASSERT.h"
+#include "AssertException.h"
 
 class Logger : private boost::noncopyable {
 
