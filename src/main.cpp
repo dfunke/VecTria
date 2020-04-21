@@ -263,8 +263,8 @@ void timeSyntheticKineticValid(TextTable &output,
 
     auto dt_cgal = triangulator.cgal(p_cgal);
     auto dt = triangulator.template convert<SimplexArray>(dt_cgal);
-    
-    auto invalid = checker.check(dt, pa);
+
+    auto[invalid, wrongOrient] = checker.check(dt, pa);
     assert(!invalid);
 
     for (uint i = 1; i < T; ++i) {
@@ -281,7 +281,7 @@ void timeSyntheticKineticValid(TextTable &output,
         avg /= (PointArray::D * delta.size());
 
         auto t1 = std::chrono::high_resolution_clock::now();
-        auto invalid = checker.check(dt, pb);
+        auto[invalid, wrongOrient] = checker.check(dt, pb);
         auto t2 = std::chrono::high_resolution_clock::now();
 
         generator.convert(p_cgal, pb);

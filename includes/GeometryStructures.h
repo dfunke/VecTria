@@ -96,21 +96,6 @@ public:
     }
 };
 
-template<class Point>
-class Box{
-
-public:
-    using Precision = typename Point::Precision;
-    static constexpr tDimType D = Point::D;
-
-private:
-    using tCoord = std::array<Precision, D>;
-
-public:
-    tCoord low;
-    tCoord high;
-};
-
 template<class Traits>
 class PointArray {
 
