@@ -15,7 +15,7 @@ template<typename Precision>
 struct FileReader<3, Precision> {
 
     template<class PointArray>
-    tIndexType read(const std::string &filename, PointArray &pa) const {
+    std::pair<tIndexType, Box<Point<PointArray>>> read(const std::string &filename, PointArray &pa) const {
 
         std::ifstream f(filename);
         assert(f.is_open());
@@ -42,13 +42,23 @@ struct FileReader<3, Precision> {
         std::getline(f, line);
         assert (line.find("ITEM: BOX BOUNDS") != std::string::npos);
 
-        std::getline(f, line);
-        //bbox[0, :] = np.asarray(f.readline().split(' '), dtype=np.float)
-        std::getline(f, line);
-        //bbox[1, :] = np.asarray(f.readline().split(' '), dtype=np.float)
-        std::getline(f, line);
-        //bbox[2, :] = np.asarray(f.readline().split(' '), dtype=np.float)
+        Box<Point<PointArray>> bounds;
+        std::vector<std::string> splits;
 
+        std::getline(f, line);
+        boost::split(splits, line, [](char c) { return c == ' '; });
+        bounds.low[0] = static_cast<Precision>(std::stod(splits[0]));
+        bounds.high[0] = static_cast<Precision>(std::stod(splits[1]));
+
+        std::getline(f, line);
+        boost::split(splits, line, [](char c) { return c == ' '; });
+        bounds.low[1] = static_cast<Precision>(std::stod(splits[0]));
+        bounds.high[1] = static_cast<Precision>(std::stod(splits[1]));
+
+        std::getline(f, line);
+        boost::split(splits, line, [](char c) { return c == ' '; });
+        bounds.low[2] = static_cast<Precision>(std::stod(splits[0]));
+        bounds.high[2] = static_cast<Precision>(std::stod(splits[1]));
 
         // fourth item are the atoms
         std::getline(f, line);
@@ -75,7 +85,7 @@ struct FileReader<3, Precision> {
 
         Predicates<Precision>::set_static_limits(maxx, maxy, maxz);
 
-        return timestep;
+        return std::make_pair(timestep, bounds);
     }
 
     template<class PointArray>

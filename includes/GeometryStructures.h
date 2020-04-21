@@ -96,6 +96,21 @@ public:
     }
 };
 
+template<class Point>
+class Box{
+
+public:
+    using Precision = typename Point::Precision;
+    static constexpr tDimType D = Point::D;
+
+private:
+    using tCoord = std::array<Precision, D>;
+
+public:
+    tCoord low;
+    tCoord high;
+};
+
 template<class Traits>
 class PointArray {
 
@@ -360,3 +375,56 @@ public:
         pcBase::precompute(*this, points);
     }
 };
+
+template<class PointArray, class OStream>
+OStream &operator<<(OStream &os, const Point<PointArray> &p) {
+    os << "[" << p[0];
+
+    for (tDimType d = 1; d < PointArray::D; ++d) {
+        os << ", " << p[d];
+
+    }
+    os << "]";
+
+    return os;
+}
+
+template<class SimplexArray, class OStream>
+OStream &operator<<(OStream &os, const Simplex<SimplexArray> &s) {
+    os << "[" << s.vertex(0);
+
+    for (tDimType d = 1; d < SimplexArray::D + 1; ++d) {
+        os << ", " << s.vertex(d);
+
+    }
+    os << "]";
+    os << " (" << s.neighbor(0);
+
+    for (tDimType d = 1; d < SimplexArray::D + 1; ++d) {
+        os << ", " << s.neighbor(d);
+
+    }
+    os << ")";
+
+    return os;
+}
+
+template<class Point, class OStream>
+OStream &operator<<(OStream &os, const Box<Point> &b) {
+    os << "[" << b.low[0];
+
+    for (tDimType d = 1; d < Box<Point>::D; ++d) {
+        os << ", " << b.low[d];
+
+    }
+    os << "]";
+    os << " [" << b.high[0];
+
+    for (tDimType d = 1; d < Box<Point>::D; ++d) {
+        os << ", " << b.high[d];
+
+    }
+    os << "]";
+
+    return os;
+}

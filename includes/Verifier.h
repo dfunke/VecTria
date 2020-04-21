@@ -4,39 +4,6 @@
 
 #include "GeometryStructures.h"
 
-template<class PointArray>
-std::ostream &operator<<(std::ostream &os, const Point<PointArray> &p) {
-    os << "[" << p[0];
-
-    for (tDimType d = 1; d < PointArray::D; ++d) {
-        os << ", " << p[d];
-
-    }
-    os << "]";
-
-    return os;
-}
-
-template<class SimplexArray>
-std::ostream &operator<<(std::ostream &os, const Simplex<SimplexArray> &s) {
-    os << "[" << s.vertex(0);
-
-    for (tDimType d = 1; d < SimplexArray::D + 1; ++d) {
-        os << ", " << s.vertex(d);
-
-    }
-    os << "]";
-    os << " (" << s.neighbor(0);
-
-    for (tDimType d = 1; d < SimplexArray::D + 1; ++d) {
-        os << ", " << s.neighbor(d);
-
-    }
-    os << ")";
-
-    return os;
-}
-
 template<class OutStream>
 struct Verifier {
     Verifier(OutStream& outStream) : outStream(outStream) {

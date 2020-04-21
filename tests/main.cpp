@@ -6,6 +6,10 @@
 #include "MemoryLayoutVectorizedAoATest.h"
 #include "TriangulatorTest.h"
 
+#include "GeometryTest.h"
+
+#include "GeometryTest.h"
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

@@ -65,8 +65,8 @@ struct Checker<3, Precision> {
                     }
                 }
 
-                if (Vc::any_of((det < 0) & !Vc::simd_cast<Vc::Mask<Precision>>(maskInfOppVertex))) {
-                    invalid += ((det < 0) & !Vc::simd_cast<Vc::Mask<Precision>>(maskInfOppVertex)).count();
+                if (Vc::any_of((det > 0) & !Vc::simd_cast<Vc::Mask<Precision>>(maskInfOppVertex))) {
+                    invalid += ((det > 0) & !Vc::simd_cast<Vc::Mask<Precision>>(maskInfOppVertex)).count();
                 }
 
             }
@@ -84,26 +84,28 @@ struct Checker<3, Precision> {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // non-vectorized
 
-    template<class SimplexArray, class PointArray, typename Ret=tIndexType>
+    template<class SimplexArray, class PointArray, typename Ret=std::pair<tIndexType, tIndexType>>
     auto check(const SimplexArray &simplices,
                const PointArray &points) -> std::enable_if_t<not SimplexArray::isVectorized, Ret> {
 
         tIndexType invalid = 0;
+        tIndexType wrongOrient = 0;
 
         for (tIndexType i = 0; i < simplices.size(); ++i) {
 
-            if (!check_simplex(i, simplices, points)) {
-                ++invalid;
-            }
+            auto[valid, orient] = check_simplex(i, simplices, points);
+            invalid += !valid;
+            wrongOrient += !orient;
         }
 
-        return invalid;
+        return std::make_pair(invalid, wrongOrient);
     }
 
     template<class SimplexArray, class PointArray>
-    inline bool check_simplex(const tIndexType &i, const SimplexArray &simplices, const PointArray &points) {
+    inline std::pair<bool, bool>
+    check_simplex(const tIndexType &i, const SimplexArray &simplices, const PointArray &points) {
 
-        bool valid = true;
+        bool bOrient;
 
         for (tDimType d = 0; d < D + 1; ++d) {
             tIndexType oppVertex = INF;
@@ -127,18 +129,20 @@ struct Checker<3, Precision> {
 
             if (oppVertex != INF) {
                 auto[det, permanent] = Predicates<Precision>::insphere(i, oppVertex, simplices, points);
+                auto orient = Predicates<Precision>::pred_orient(i, simplices, points);
+                bOrient = (orient > 0);
 
                 if (permanent) {
                     det = Predicates<Precision>::insphere_adapt(permanent, i, oppVertex, simplices, points);
                 }
 
-                if (det < 0) {
-                    valid = false;
+                if (orient * det < 0) {
+                    return std::make_pair(false, bOrient);
                 }
             }
         }
 
-        return valid;
+        return std::make_pair(true, bOrient);
 
     }
 
