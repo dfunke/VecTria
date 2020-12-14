@@ -105,7 +105,7 @@ struct Checker<3, Precision> {
     inline std::pair<bool, bool>
     check_simplex(const tIndexType &i, const SimplexArray &simplices, const PointArray &points) {
 
-        bool bOrient;
+        bool bOrient = true;
 
         for (tDimType d = 0; d < D + 1; ++d) {
             tIndexType oppVertex = INF;

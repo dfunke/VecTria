@@ -5,7 +5,7 @@ if (TESTS)
             ../src/Logger.cpp)
 
     if (GTest_FOUND)
-        target_link_libraries(test ${GTEST_BOTH_LIBRARIES})
+        target_link_libraries(test ${GTEST_BOTH_LIBRARIES} 'pthread')
     endif ()
 
     if (Vc_FOUND)
